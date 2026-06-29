@@ -14,7 +14,7 @@ If you are working in a shared JupyterHub where the base environment already has
 pip install cf-xarray xesmf esgf-pyclient intake-esgf globus-sdk cmocean kaleido
 ```
 
-### Fresh install — conda/mamba (recommended)
+### Fresh install: conda/mamba (recommended)
 
 `xesmf` and `cartopy` have binary dependencies that conda resolves more reliably than pip. [Mamba](https://mamba.readthedocs.io) is a faster drop-in replacement for conda.
 
@@ -26,7 +26,7 @@ python -m ipykernel install --user --name sea-ice-mass-balance --display-name "s
 
 Then restart JupyterHub/JupyterLab and select the `sea-ice-mass-balance` kernel.
 
-### Fresh install — pip/uv
+### Fresh install: pip/uv
 
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
