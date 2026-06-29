@@ -4,6 +4,38 @@
 
 With thanks to the SIMIP community for helpful discussion.
 
+## Environment Setup
+
+### JupyterHub / existing conda environment
+
+If you are working in a shared JupyterHub where the base environment already has most scientific packages (numpy, xarray, dask, geopandas, etc.), install the missing packages with pip:
+
+```bash
+pip install cf-xarray xesmf esgf-pyclient intake-esgf globus-sdk cmocean kaleido
+```
+
+### Fresh install — conda/mamba (recommended)
+
+`xesmf` and `cartopy` have binary dependencies that conda resolves more reliably than pip. [Mamba](https://mamba.readthedocs.io) is a faster drop-in replacement for conda.
+
+```bash
+mamba env create -f environment.yml   # or: conda env create -f environment.yml
+conda activate sea-ice-mass-balance
+python -m ipykernel install --user --name sea-ice-mass-balance --display-name "sea-ice-mass-balance"
+```
+
+Then restart JupyterHub/JupyterLab and select the `sea-ice-mass-balance` kernel.
+
+### Fresh install — pip/uv
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+uv venv --python 3.12
+source .venv/bin/activate
+uv pip install -r requirements.txt
+python -m ipykernel install --user --name sea-ice-mass-balance --display-name "sea-ice-mass-balance"
+```
+
 ## Overview
 
 Sankey diagrams of sea ice and snow-on-ice mass budgets derived from CMIP6 models and the CESM2 Large Ensemble (CESM2-LE). Budget terms are area-integrated over the Southern Ocean and Arctic Ocean for a 2015–2034 climatological period, then displayed as flow diagrams where ribbon width is proportional to annual mass flux. Flux widths are normalized across both hemispheres so Arctic and Southern Ocean figures can be compared directly.
@@ -24,16 +56,30 @@ The diagrams show the primary sources (basal growth, frazil ice, snowfall, snow�
 **Arctic Ocean**
 ![AO Snow MME](figures/snow_sankey_AO_MME.png)
 
+### Ice Mass Budget
+**Southern Ocean**
+![SO Ice MME](figures/ice_sankey_SO_MME.png)
+
+**Arctic Ocean**
+![AO Ice MME](figures/ice_sankey_AO_MME.png)
+
+### Snow Mass Budget
+**Southern Ocean**
+![SO Snow MME](figures/snow_sankey_SO_MME.png)
+
+**Arctic Ocean**
+![AO Snow MME](figures/snow_sankey_AO_MME.png)
+
 ## Models and Period
 
 | Model | Institution | Notes |
 |---|---|---|
-| ACCESS-CM2 | CSIRO/ARCCSS | Ice budget requires area-basis and sign corrections; excluded from snow budget due to unreliable snowmelt output |
-| HadGEM3-GC31-LL | Met Office | Snow dynamics available; no snow wind drift or snow sublimation output |
-| UKESM1-0-LL | Met Office / MOHC | Snow dynamics available; no snow wind drift or snow sublimation output |
-| NorESM2-LM | NCC | Snow wind drift available; no snow dynamics or snow sublimation; snowfall and snowmelt require sign/unit corrections |
-| NorESM2-MM | NCC | Snow wind drift available; no snow dynamics or snow sublimation; snowfall and snowmelt require sign/unit corrections |
-| CESM2-LE | NCAR | Large ensemble (100 members); only model with snow evaporation/sublimation output |
+| ACCESS-CM2 | CSIRO/ARCCSS | Ice budget requires area-basis and sign corrections; excluded Ice budget requires area-basis and sign corrections; excluded from snow budget due to unreliable snowmelt outpurom snow budget due to unreliable snowmelt output |
+| HadGEM3-GC31-LL | Met Office | Snow dSnow dynamics available; no snow snow wind drift or snow snow sublimation output |
+| UKESM1-0-LL | Met Office / MOHC | Snow dSnow dynamics available; no snow snow wind drift or snow snow sublimation output |
+| NorESM2-LM | NCC | Snow wSnow wind drift available; no snow snow dynamics or snow sublimation; snowfall and snowmelt require sign/unit correctionsnow sublimation; snowfall and snowmelt require sign/unit corrections |
+| NorESM2-MM | NCC | Snow wSnow wind drift available; no snow snow dynamics or snow sublimation; snowfall and snowmelt require sign/unit correctionsnow sublimation; snowfall and snowmelt require sign/unit corrections |
+| CESM2-LE | NCAR | Large ensemble (100 members) (100 members); only model with snow snow evaporation/sublimation output |
 
 **Period:** 2015–2034 (20-year climatological mean across all available ensemble members)
 
@@ -53,10 +99,10 @@ Several models required corrections to standardize outputs to a common sign conv
 
 | Model | Correction |
 |---|---|
-| **ACCESS-CM2** | `sidmassth` and `sidmassdyn` are per grid-cell area (no scaling needed). All other ice flux variables are incorrectly reported per sea-ice area — multiplied by `siconc/100` to convert to per grid-cell area before integration. `sidmassevapsubl` is reported positive (mass loss) — multiplied by −1 to enforce the loss-negative sign convention. |
-| **HadGEM3-GC31-LL, UKESM1-0-LL** | `sidmassevapsubl` is reported positive (mass loss) — multiplied by −1 to enforce the loss-negative sign convention. |
-| **NorESM2-LM, NorESM2-MM** | `sidmassmelttop`, `sidmassmeltbot`, and `sidmasslat` are reported positive (mass loss) — multiplied by −1 to enforce the loss-negative sign convention. |
-| **CESM2-LE** | `sidmassmelttop`, `sidmassmeltbot`, and `sidmasslat` are reported positive (mass loss) — multiplied by −1 to enforce the loss-negative sign convention. |
+| **ACCESS-CM2** | `sidmassth` and `sidmassdyn` are per grid-cell area (no scaling needed). All other ice flux variables are incorrectly reported per sea-ice area — multiplied by `siconc/100` to convert to per grid-cell area before integration. `sidmassevapsubl` is reported positive (mass loss) — multiplied by −1 to enforce the loss-negative sign conventionmultiplied by −1 to enforce the loss-negative sign convention. |
+| **HadGEM3-GC31-LL, UKESM1-0-LL** | `sidmassevapsubl` is reported positive (mass loss) — multiplied by −1 to enforce the loss-negative sign conventionmultiplied by −1 to enforce the loss-negative sign convention. |
+| **NorESM2-LM, NorESM2-MM** | `sidmassmelttop`, `sidmassmeltbot`, and `sidmasslat` are reported positive (mass loss) — multiplied by −1 to enforce the loss-negative sign conventionmultiplied by −1 to enforce the loss-negative sign convention. |
+| **CESM2-LE** | `sidmassmelttop`, `sidmassmeltbot`, and `sidmasslat` are reported positive (mass loss) (mass loss) — multiplied by −1 to enforce the loss-negative sign conventionmultiplied by −1 to enforce the loss-negative sign convention. |
 
 ### Snow Mass Budget
 
@@ -64,8 +110,8 @@ Several models required corrections to standardize outputs to a common sign conv
 |---|---|
 | **ACCESS-CM2** | All snow variables reported per sea-ice area — multiplied by `siconc/100`. Snowmelt (`sndmassmelt`) is anomalously large; divided by 3.3 (snow density / 100) as a correction. `sndmasswindrif` and `sndmasssubl` are unavailable. |
 | **HadGEM3-GC31-LL, UKESM1-0-LL** | `sndmasswindrif` and `sndmasssubl` are unavailable. |
-| **NorESM2-LM, NorESM2-MM** | `sndmassmelt` is reported positive (mass loss) — multiplied by −1 to enforce the loss-negative sign convention. `sndmasssnf` values are 330× too large due to a unit conversion error in the published CMIP6 output — divided by snow density (330 kg m⁻³) to correct ([NorESMhub/noresm2cmor #282](https://github.com/NorESMhub/noresm2cmor/issues/282)). `sndmasssubl` and `sndmassdyn` are unavailable. |
-| **CESM2-LE** | `sndmassmelt` is reported positive (mass loss) — multiplied by −1 to enforce the loss-negative sign convention. Snow→ice transfer (`sidmasssi`) is on the ice-budget side — converted to snow-budget units by multiplying by `-(330/917)` (snow/ice density ratio). |
+| **NorESM2-LM, NorESM2-MM** | `sndmassmelt` is reported positive (mass loss) (mass loss) — multiplied by −1 to enforce the loss-negative sign conventionmultiplied by −1 to enforce the loss-negative sign convention. `sndmasssnf` values are 330× too large due to a unit conversion error in the published CMIP6 output —values are 330× too large due to a unit conversion error in the published CMIP6 output — divided by snow density (330 kg m⁻³) to correct ([NorESMhub/noresm2cmor #282](https://github.com/NorESMhub/noresm2cmor/issues/282)) to correct ([NorESMhub/noresm2cmor #282](https://github.com/NorESMhub/noresm2cmor/issues/282)). `sndmasssubl` and `sndmassdyn` are unavailable. |
+| **CESM2-LE** | `sndmassmelt` is reported positive (mass loss) (mass loss) — multiplied by −1 to enforce the loss-negative sign conventionmultiplied by −1 to enforce the loss-negative sign convention. Snow→ice transfer (`sidmasssi`) is on the ice-budget side — converted to snow-budget units by multiplying by `-(330/917)` (snow/ice density ratio). |
 
 ### Variable Availability by Model
 

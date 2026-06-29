@@ -10,7 +10,6 @@ def _data_path(file):
 NH_seaice_regions = gp.read_file(_data_path('NSIDC-0780_SeaIceRegions_NH_v1.0.shp'))
 SH_seaice_regions = gp.read_file(_data_path('NSIDC-0780_SeaIceRegions_SH-NASA_v1.0.shp'))
 
-
 # ── Data loading helpers ───────────────────────────────────────────────────────
 
 def preprocess_snap_to_month_start(ds):
