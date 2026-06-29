@@ -1,7 +1,8 @@
 # Sea Ice Mass Balance Sankey Diagrams
 
 **Lead:** Alek Petty | **Data visuals:** Chris Cardinale | **Co-I:** Maddie Smith
-Help from and discussion with the SIMIP team.
+
+With thanks to the SIMIP community for helpful discussion.
 
 ## Overview
 
@@ -10,14 +11,18 @@ Sankey diagrams of sea ice and snow-on-ice mass budgets derived from CMIP6 model
 The diagrams show the primary sources (basal growth, frazil ice, snowfall, snow→ice conversion) and sinks (top melt, basal melt, lateral melt, evaporation/sublimation) of each reservoir, with thermodynamic growth terms grouped into an intermediate **Ocean Growth** node and thermodynamic melt terms into an **Ocean Melt** node.
 
 ### Ice Mass Budget
-| Southern Ocean | Arctic Ocean |
-|:---:|:---:|
-| ![SO Ice MME](figures/ice_sankey_SO_MME.png) | ![AO Ice MME](figures/ice_sankey_AO_MME.png) |
+**Southern Ocean**
+![SO Ice MME](figures/ice_sankey_SO_MME.png)
+
+**Arctic Ocean**
+![AO Ice MME](figures/ice_sankey_AO_MME.png)
 
 ### Snow Mass Budget
-| Southern Ocean | Arctic Ocean |
-|:---:|:---:|
-| ![SO Snow MME](figures/snow_sankey_SO_MME.png) | ![AO Snow MME](figures/snow_sankey_AO_MME.png) |
+**Southern Ocean**
+![SO Snow MME](figures/snow_sankey_SO_MME.png)
+
+**Arctic Ocean**
+![AO Snow MME](figures/snow_sankey_AO_MME.png)
 
 ## Models and Period
 
