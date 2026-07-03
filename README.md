@@ -103,6 +103,28 @@ Several models required corrections to standardize outputs to a common sign conv
 
 Availability across the full CMIP6 archive (native grid, `SImon`, `ssp245`) as surfaced by the catalog search in `model_load.ipynb` (`availability_df`), plus CESM2-LE (loaded separately from NCAR storage, not through the ESGF/cloud catalog). ⭐ marks the models currently used in the Sankey figures (alphabetical order).
 
+**Data availability summary — 36 total models**
+
+| Ice Variable | # Models with data |
+|---|:---:|
+| Top Melt | 30 |
+| Basal Melt | 30 |
+| Lateral Melt | 22 |
+| Basal Growth | 28 |
+| Frazil | 29 |
+| Snow→Ice | 30 |
+| Evap/Subl | 28 |
+| Dynamics | 22 |
+
+| Snow Variable | # Models with data |
+|---|:---:|
+| Melt | 25 |
+| Snowfall | 33 |
+| Snow→Ice | 15 |
+| Evap/Subl | 10 |
+| Wind Drift | 2 |
+| Dynamics | 11 |
+
 **Ice Mass Budget**
 
 | Model | Top Melt | Basal Melt | Lateral Melt | Basal Growth | Frazil | Snow→Ice | Evap/Subl | Dynamics |
