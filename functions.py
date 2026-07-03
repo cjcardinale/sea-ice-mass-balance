@@ -3,6 +3,8 @@ import xarray as xr
 import regionmask
 import geopandas as gp
 from importlib.resources import files
+from functools import reduce
+import pandas as pd
 
 def _data_path(file):
     return files('files').joinpath(file)
@@ -18,6 +20,22 @@ def preprocess_snap_to_month_start(ds):
     ds = ds.assign_coords(time=new_time)
     return ds
 
+# ── CMIP6 Catalog and Model Discovery ─────────────────────────────────────────
+
+def to_pystr_list(arr):
+    """Convert a numpy array to a plain Python list of strings."""
+    return arr.astype(str).tolist()
+
+def preferred_load_list(cat_cloud, cat_esgf):
+    """Split models into cloud-preferred and ESGF lists based on catalog availability."""
+    cloud_models = reduce(np.union1d, [cat_cloud[t].df.source_id.unique() for t in ['tgt', 'awgt', 'aswgt']])
+    esgf_models = reduce(np.union1d, [cat_esgf[t].df.source_id.unique() for t in ['tgt', 'awgt', 'aswgt']])
+    all_models = np.union1d(cloud_models, esgf_models)
+    cloud_subset = np.setdiff1d(all_models, esgf_models)
+    return {
+        'cloud': to_pystr_list(cloud_subset),
+        'esgf': to_pystr_list(esgf_models),
+    }
 
 # ── Model selection utilities (from functions.py) ──────────────────────────────
 
@@ -37,15 +55,6 @@ def drop_sel(ds: xr.Dataset, sids=('CESM2-LE',)):
     else:
         members_to_keep = ds['member_id'].where(keep, drop=True)
         return ds.sel(member_id=members_to_keep)
-
-
-# ── Sankey: seasonal ordering ──────────────────────────────────────────────────
-
-START_MONTH = 3   # 3 = Mar (SH ice-growth onset);  7 = Jul (mid-winter)
-_SH_MONTHS  = [(START_MONTH - 1 + i) % 12 + 1 for i in range(12)]
-_MONTH_ABBR = {7:"Jul",8:"Aug",9:"Sep",10:"Oct",11:"Nov",12:"Dec",
-               1:"Jan",2:"Feb",3:"Mar",4:"Apr",5:"May",6:"Jun"}
-_SH_RANK    = {m: i for i, m in enumerate(_SH_MONTHS)}
 
 
 # ── Sankey: model list and colour palette ──────────────────────────────────────
@@ -83,36 +92,22 @@ _MIN_TRACE_Gt = 200   # Gt yr⁻¹ — below this: faint ribbon
 def _sel(da, model):
     return sel_model(da, model) if model is not None else da
 
-def _ann_Gt(da, member_dim="member_id", time_dim="time"):
-    """Annual total in Gt yr⁻¹ (input: 10³ Gt month⁻¹)."""
+def _ann_Gt_old(da, member_dim="member_id", time_dim="time"):
+    """Annual total in Gt yr⁻¹ (input: 10³ Gt month⁻¹). Climatology-first version, kept for comparison."""
     if da.sizes.get(member_dim, 0) == 0 or da.sizes.get(time_dim, 0) == 0:
         return 0.0
     clim = da.groupby(f"{time_dim}.month").mean(time_dim)
     return float(clim.sum("month").mean(member_dim).values) * 1e3
 
-def _peak_sh(da, use_abs=False, member_dim="member_id", time_dim="time"):
-    """Peak-month rank relative to START_MONTH and its abbreviation."""
+def _ann_Gt(da, member_dim="member_id", time_dim="time"):
+    """Annual total in Gt yr⁻¹ (input: 10³ Gt month⁻¹). Sum-per-year, then mean over years."""
     if da.sizes.get(member_dim, 0) == 0 or da.sizes.get(time_dim, 0) == 0:
-        return 0, "N/A"
-    clim = da.groupby(f"{time_dim}.month").mean(time_dim).mean(member_dim)
-    arr  = np.abs(clim) if use_abs else clim
-    pm   = int(arr.idxmax("month").values)
-    return _SH_RANK[pm], _MONTH_ABBR[pm]
+        return 0.0
+    annual = da.groupby(f"{time_dim}.year").sum(time_dim)
+    return float(annual.mean("year").mean(member_dim).values) * 1e3
 
-def _t(da, use_abs=False):
-    v = _ann_Gt(da)
-    r, pk = _peak_sh(da, use_abs=use_abs)
-    return v, r, pk
-
-def _t_safe(budget, key, s, use_abs=False):
-    """Like _t but returns (0.0, 0, 'N/A') if key is absent from budget."""
-    da = budget.get(key)
-    if da is None:
-        return 0.0, 0, "N/A"
-    return _t(s(da), use_abs=use_abs)
-
-def _ann_safe(budget, key, s):
-    """Like _ann_Gt but returns 0.0 if key is absent from budget."""
+def _t_safe(budget, key, s):
+    """Annual Gt yr⁻¹ for a flux, or 0.0 if key is absent from budget."""
     da = budget.get(key)
     return 0.0 if da is None else _ann_Gt(s(da))
 
@@ -130,12 +125,12 @@ def _hex_to_rgba(hex_color, alpha=0.50):
 
 def _balance_flows(inflows, outflows):
     """Filter zero flows and append a 'Residual' to whichever side is smaller."""
-    inflows  = [(v, r, pk, lb, col) for v, r, pk, lb, col in inflows  if v > 0]
-    outflows = [(v, r, pk, lb, col) for v, r, pk, lb, col in outflows if v > 0]
+    inflows  = [(v, lb, col) for v, lb, col in inflows  if v > 0]
+    outflows = [(v, lb, col) for v, lb, col in outflows if v > 0]
     imbalance = sum(v for v, *_ in inflows) - sum(v for v, *_ in outflows)
     total_throughput = sum(v for v, *_ in inflows) + sum(v for v, *_ in outflows)
     if total_throughput > 0 and abs(imbalance) / total_throughput > 0:
-        dummy = (abs(imbalance), 99, "—", "Residual", "#aaaaaa")
+        dummy = (abs(imbalance), "Residual", "#aaaaaa")
         if imbalance > 0:
             outflows.append(dummy)
         else:
@@ -148,7 +143,7 @@ def _plotly_sankey_fig(res_label, res_color, inflows, outflows,
     """
     Build a Plotly Sankey figure for a mass budget.
 
-    inflows / outflows: list of (flow_Gt, peak_rank, peak_month, label, color)
+    inflows / outflows: list of (flow_Gt, label, color)
 
     inflow_group / outflow_group: optional dicts
       {"members": {label, ...}, "color": hex, "name": optional str}
@@ -163,7 +158,7 @@ def _plotly_sankey_fig(res_label, res_color, inflows, outflows,
     n_in  = len(inflows)
     n_out = len(outflows)
 
-    node_labels = [f"{lb} ({_fmt(v)} Gt yr⁻¹)" for v, _, _, lb, _ in inflows]
+    node_labels = [f"{lb} ({_fmt(v)} Gt yr⁻¹)" for v, lb, _ in inflows]
     node_colors = [col for *_, col in inflows]
     node_x = [0.01] * n_in
 
@@ -206,7 +201,7 @@ def _plotly_sankey_fig(res_label, res_color, inflows, outflows,
     node_x.append(0.50)
     node_y.append(0.5)
 
-    node_labels += [f"{lb} ({_fmt(v)} Gt yr⁻¹)" for v, _, _, lb, _ in outflows]
+    node_labels += [f"{lb} ({_fmt(v)} Gt yr⁻¹)" for v, lb, _ in outflows]
     node_colors += [col for *_, col in outflows]
     node_x += [0.99] * n_out
     node_y += out_ys
@@ -227,7 +222,7 @@ def _plotly_sankey_fig(res_label, res_color, inflows, outflows,
             node_y.append(combined_out_y)
 
     sources, targets, values, lcolors = [], [], [], []
-    for i, (v, r, pk, lb, col) in enumerate(inflows):
+    for i, (v, lb, col) in enumerate(inflows):
         target = group_idx if (group_idx is not None and lb in inflow_group["members"]) else res_idx
         sources.append(i)
         targets.append(target)
@@ -241,7 +236,7 @@ def _plotly_sankey_fig(res_label, res_color, inflows, outflows,
         lcolors.append(_hex_to_rgba(inflow_group["color"], 0.52))
 
     out_start = res_idx + 1
-    for j, (v, r, pk, lb, col) in enumerate(outflows):
+    for j, (v, lb, col) in enumerate(outflows):
         source = out_group_idx if (out_group_idx is not None and lb in outflow_group["members"]) else res_idx
         sources.append(source)
         targets.append(out_start + j)
@@ -313,29 +308,29 @@ def _plotly_sankey_fig(res_label, res_color, inflows, outflows,
 def _ice_flows(ice_budget, model=None):
     """Build the (inflows, outflows) lists for an ice mass budget."""
     s = lambda da: _sel(da, model)
-    bg_v, bg_r, bg_pk = _t_safe(ice_budget, "basal growth",  s)
-    fr_v, fr_r, fr_pk = _t_safe(ice_budget, "frazil",        s)
-    si_v, si_r, si_pk = _t_safe(ice_budget, "snowice",       s)
-    tm_v, tm_r, tm_pk = _t_safe(ice_budget, "top melt",      s, use_abs=True)
-    bm_v, bm_r, bm_pk = _t_safe(ice_budget, "basal melt",   s, use_abs=True)
-    lm_v, lm_r, lm_pk = _t_safe(ice_budget, "lateral melt", s, use_abs=True)
-    es_v, es_r, es_pk = _t_safe(ice_budget, "evapsubl",      s, use_abs=True)
-    dy_v, dy_r, dy_pk = _t_safe(ice_budget, "dynamics",      s, use_abs=True)
-    dyn_in  = max(0.0,  _ann_safe(ice_budget, "dynamics", s))
-    dyn_out = max(0.0, -_ann_safe(ice_budget, "dynamics", s))
+    bg_v = _t_safe(ice_budget, "basal growth",  s)
+    fr_v = _t_safe(ice_budget, "frazil",        s)
+    si_v = _t_safe(ice_budget, "snowice",       s)
+    tm_v = _t_safe(ice_budget, "top melt",      s)
+    bm_v = _t_safe(ice_budget, "basal melt",    s)
+    lm_v = _t_safe(ice_budget, "lateral melt",  s)
+    es_v = _t_safe(ice_budget, "evapsubl",      s)
+    dy_v = _t_safe(ice_budget, "dynamics",      s)
+    dyn_in  = max(0.0,  dy_v)
+    dyn_out = max(0.0, -dy_v)
 
     inflows = [
-        (abs(si_v), si_r, si_pk, "Snow→Ice",    _C["snow2ice_g"]),
-        (abs(fr_v), fr_r, fr_pk, "Frazil",      _C["frazil"]),
-        (abs(bg_v), bg_r, bg_pk, "Basal Growth", _C["basal_g"]),
-        (dyn_in,    dy_r, dy_pk, "Dyn. Import",  _C["dyn_in"]),
+        (abs(si_v), "Snow→Ice",    _C["snow2ice_g"]),
+        (abs(fr_v), "Frazil",      _C["frazil"]),
+        (abs(bg_v), "Basal Growth", _C["basal_g"]),
+        (dyn_in,    "Dyn. Import",  _C["dyn_in"]),
     ]
     outflows = [
-        (abs(es_v), es_r, es_pk, "Evap/Subl",   _C["evapsubl"]),
-        (abs(tm_v), tm_r, tm_pk, "Top Melt",     _C["top_melt"]),
-        (dyn_out,   dy_r, dy_pk, "Dyn. Export",  _C["dyn_out"]),
-        (abs(lm_v), lm_r, lm_pk, "Lateral Melt", _C["lat_melt"]),
-        (abs(bm_v), bm_r, bm_pk, "Basal Melt",   _C["basal_melt"]),
+        (abs(es_v), "Evap/Subl",   _C["evapsubl"]),
+        (abs(tm_v), "Top Melt",     _C["top_melt"]),
+        (dyn_out,   "Dyn. Export",  _C["dyn_out"]),
+        (abs(lm_v), "Lateral Melt", _C["lat_melt"]),
+        (abs(bm_v), "Basal Melt",   _C["basal_melt"]),
     ]
     return inflows, outflows
 
@@ -366,28 +361,28 @@ def make_ice_sankey_plotly(ice_budget, model=None, res_label=None, title=None,
 def _snow_flows(snow_budget, model=None):
     """Build the (inflows, outflows) lists for a snow mass budget."""
     s = lambda da: _sel(da, model)
-    sf_v, sf_r, sf_pk = _t_safe(snow_budget, "snowfall",    s)
-    sm_v, sm_r, sm_pk = _t_safe(snow_budget, "snowmelt",    s, use_abs=True)
-    s2_v, s2_r, s2_pk = _t_safe(snow_budget, "snow to ice", s, use_abs=True)
-    es_v, es_r, es_pk = _t_safe(snow_budget, "evapsubl",    s, use_abs=True)
-    dy_v, dy_r, dy_pk = _t_safe(snow_budget, "dynamics",    s, use_abs=True)
-    wd_v, wd_r, wd_pk = _t_safe(snow_budget, "wind drift",  s, use_abs=True)
-    dyn_in   = max(0.0,  _ann_safe(snow_budget, "dynamics",   s))
-    dyn_out  = max(0.0, -_ann_safe(snow_budget, "dynamics",   s))
-    wind_in  = max(0.0,  _ann_safe(snow_budget, "wind drift", s))
-    wind_out = max(0.0, -_ann_safe(snow_budget, "wind drift", s))
+    sf_v = _t_safe(snow_budget, "snowfall",    s)
+    sm_v = _t_safe(snow_budget, "snowmelt",    s)
+    s2_v = _t_safe(snow_budget, "snow to ice", s)
+    es_v = _t_safe(snow_budget, "evapsubl",    s)
+    dy_v = _t_safe(snow_budget, "dynamics",    s)
+    wd_v = _t_safe(snow_budget, "wind drift",  s)
+    dyn_in   = max(0.0,  dy_v)
+    dyn_out  = max(0.0, -dy_v)
+    wind_in  = max(0.0,  wd_v)
+    wind_out = max(0.0, -wd_v)
 
     inflows = [
-        (abs(sf_v), sf_r, sf_pk, "Snowfall",    _C["snowfall"]),
-        (dyn_in,    dy_r, dy_pk, "Dyn. Import", _C["dyn_in"]),
-        (wind_in,   wd_r, wd_pk, "Wind Import", _C["wind_in"]),
+        (abs(sf_v), "Snowfall",    _C["snowfall"]),
+        (dyn_in,    "Dyn. Import", _C["dyn_in"]),
+        (wind_in,   "Wind Import", _C["wind_in"]),
     ]
     outflows = [
-        (abs(es_v),  es_r, es_pk, "Evap/Subl",  _C["evapsubl"]),
-        (wind_out,   wd_r, wd_pk, "Wind Export", _C["wind_out"]),
-        (abs(sm_v),  sm_r, sm_pk, "Snowmelt",    _C["snowmelt"]),
-        (abs(s2_v),  s2_r, s2_pk, "Snow→Ice",   _C["snow2ice_s"]),
-        (dyn_out,    dy_r, dy_pk, "Dyn. Export", _C["dyn_out"]),
+        (abs(es_v),  "Evap/Subl",  _C["evapsubl"]),
+        (wind_out,   "Wind Export", _C["wind_out"]),
+        (abs(sm_v),  "Snowmelt",    _C["snowmelt"]),
+        (abs(s2_v),  "Snow→Ice",   _C["snow2ice_s"]),
+        (dyn_out,    "Dyn. Export", _C["dyn_out"]),
     ]
     return inflows, outflows
 

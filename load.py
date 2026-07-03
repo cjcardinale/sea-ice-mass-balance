@@ -2274,8 +2274,7 @@ class CESM():
         }
 
         datasets = []
-        for url in (pbar (pbar := tqdm(urls, desc=f"OPeNDAP {var}", unit="file", leave=False)):
-            pbar.set_postfix_str(os.path.basename(url)[:40])= tqdm(urls, desc=f"OPeNDAP {var}", unit="file", leave=False)):
+        for url in (pbar := tqdm(urls, desc=f"OPeNDAP {var}", unit="file", leave=False)):
             pbar.set_postfix_str(os.path.basename(url)[:40])
             for attempt in range(1, 5):
                 try:

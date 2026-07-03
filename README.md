@@ -56,30 +56,16 @@ The diagrams show the primary sources (basal growth, frazil ice, snowfall, snow�
 **Arctic Ocean**
 ![AO Snow MME](figures/snow_sankey_AO_MME.png)
 
-### Ice Mass Budget
-**Southern Ocean**
-![SO Ice MME](figures/ice_sankey_SO_MME.png)
-
-**Arctic Ocean**
-![AO Ice MME](figures/ice_sankey_AO_MME.png)
-
-### Snow Mass Budget
-**Southern Ocean**
-![SO Snow MME](figures/snow_sankey_SO_MME.png)
-
-**Arctic Ocean**
-![AO Snow MME](figures/snow_sankey_AO_MME.png)
-
 ## Models and Period
 
 | Model | Institution | Notes |
 |---|---|---|
-| ACCESS-CM2 | CSIRO/ARCCSS | Ice budget requires area-basis and sign corrections; excluded Ice budget requires area-basis and sign corrections; excluded from snow budget due to unreliable snowmelt outpurom snow budget due to unreliable snowmelt output |
-| HadGEM3-GC31-LL | Met Office | Snow dSnow dynamics available; no snow snow wind drift or snow snow sublimation output |
-| UKESM1-0-LL | Met Office / MOHC | Snow dSnow dynamics available; no snow snow wind drift or snow snow sublimation output |
-| NorESM2-LM | NCC | Snow wSnow wind drift available; no snow snow dynamics or snow sublimation; snowfall and snowmelt require sign/unit correctionsnow sublimation; snowfall and snowmelt require sign/unit corrections |
-| NorESM2-MM | NCC | Snow wSnow wind drift available; no snow snow dynamics or snow sublimation; snowfall and snowmelt require sign/unit correctionsnow sublimation; snowfall and snowmelt require sign/unit corrections |
-| CESM2-LE | NCAR | Large ensemble (100 members) (100 members); only model with snow snow evaporation/sublimation output |
+| ACCESS-CM2 | CSIRO/ARCCSS | Ice budget requires area-basis and sign corrections; excluded from snow budget due to unreliable snowmelt output |
+| HadGEM3-GC31-LL | Met Office | Snow dynamics available; no snow wind drift or snow sublimation output |
+| UKESM1-0-LL | Met Office / MOHC | Snow dynamics available; no snow wind drift or snow sublimation output |
+| NorESM2-LM | NCC | Snow wind drift available; no snow dynamics or snow sublimation; snowfall and snowmelt require sign/unit corrections |
+| NorESM2-MM | NCC | Snow wind drift available; no snow dynamics or snow sublimation; snowfall and snowmelt require sign/unit corrections |
+| CESM2-LE | NCAR | Large ensemble (100 members); only model with snow evaporation/sublimation output |
 
 **Period:** 2015–2034 (20-year climatological mean across all available ensemble members)
 
@@ -99,10 +85,10 @@ Several models required corrections to standardize outputs to a common sign conv
 
 | Model | Correction |
 |---|---|
-| **ACCESS-CM2** | `sidmassth` and `sidmassdyn` are per grid-cell area (no scaling needed). All other ice flux variables are incorrectly reported per sea-ice area — multiplied by `siconc/100` to convert to per grid-cell area before integration. `sidmassevapsubl` is reported positive (mass loss) — multiplied by −1 to enforce the loss-negative sign conventionmultiplied by −1 to enforce the loss-negative sign convention. |
-| **HadGEM3-GC31-LL, UKESM1-0-LL** | `sidmassevapsubl` is reported positive (mass loss) — multiplied by −1 to enforce the loss-negative sign conventionmultiplied by −1 to enforce the loss-negative sign convention. |
-| **NorESM2-LM, NorESM2-MM** | `sidmassmelttop`, `sidmassmeltbot`, and `sidmasslat` are reported positive (mass loss) — multiplied by −1 to enforce the loss-negative sign conventionmultiplied by −1 to enforce the loss-negative sign convention. |
-| **CESM2-LE** | `sidmassmelttop`, `sidmassmeltbot`, and `sidmasslat` are reported positive (mass loss) (mass loss) — multiplied by −1 to enforce the loss-negative sign conventionmultiplied by −1 to enforce the loss-negative sign convention. |
+| **ACCESS-CM2** | `sidmassth` and `sidmassdyn` are per grid-cell area (no scaling needed). All other ice flux variables are incorrectly reported per sea-ice area — multiplied by `siconc/100` to convert to per grid-cell area before integration. `sidmassevapsubl` is reported positive (mass loss) — multiplied by −1 to enforce the loss-negative sign convention. |
+| **HadGEM3-GC31-LL, UKESM1-0-LL** | `sidmassevapsubl` is reported positive (mass loss) — multiplied by −1 to enforce the loss-negative sign convention. |
+| **NorESM2-LM, NorESM2-MM** | `sidmassmelttop`, `sidmassmeltbot`, and `sidmasslat` are reported positive (mass loss) — multiplied by −1 to enforce the loss-negative sign convention. |
+| **CESM2-LE** | `sidmassmelttop`, `sidmassmeltbot`, and `sidmasslat` are reported positive (mass loss) — multiplied by −1 to enforce the loss-negative sign convention. |
 
 ### Snow Mass Budget
 
@@ -110,25 +96,96 @@ Several models required corrections to standardize outputs to a common sign conv
 |---|---|
 | **ACCESS-CM2** | All snow variables reported per sea-ice area — multiplied by `siconc/100`. Snowmelt (`sndmassmelt`) is anomalously large; divided by 3.3 (snow density / 100) as a correction. `sndmasswindrif` and `sndmasssubl` are unavailable. |
 | **HadGEM3-GC31-LL, UKESM1-0-LL** | `sndmasswindrif` and `sndmasssubl` are unavailable. |
-| **NorESM2-LM, NorESM2-MM** | `sndmassmelt` is reported positive (mass loss) (mass loss) — multiplied by −1 to enforce the loss-negative sign conventionmultiplied by −1 to enforce the loss-negative sign convention. `sndmasssnf` values are 330× too large due to a unit conversion error in the published CMIP6 output —values are 330× too large due to a unit conversion error in the published CMIP6 output — divided by snow density (330 kg m⁻³) to correct ([NorESMhub/noresm2cmor #282](https://github.com/NorESMhub/noresm2cmor/issues/282)) to correct ([NorESMhub/noresm2cmor #282](https://github.com/NorESMhub/noresm2cmor/issues/282)). `sndmasssubl` and `sndmassdyn` are unavailable. |
-| **CESM2-LE** | `sndmassmelt` is reported positive (mass loss) (mass loss) — multiplied by −1 to enforce the loss-negative sign conventionmultiplied by −1 to enforce the loss-negative sign convention. Snow→ice transfer (`sidmasssi`) is on the ice-budget side — converted to snow-budget units by multiplying by `-(330/917)` (snow/ice density ratio). |
+| **NorESM2-LM, NorESM2-MM** | `sndmassmelt` is reported positive (mass loss) — multiplied by −1 to enforce the loss-negative sign convention. `sndmasssnf` values are 330× too large due to a unit conversion error in the published CMIP6 output — divided by snow density (330 kg m⁻³) to correct ([NorESMhub/noresm2cmor #282](https://github.com/NorESMhub/noresm2cmor/issues/282)). `sndmasssubl` and `sndmassdyn` are unavailable. |
+| **CESM2-LE** | `sndmassmelt` is reported positive (mass loss) — multiplied by −1 to enforce the loss-negative sign convention. Snow→ice transfer (`sidmasssi`) is on the ice-budget side — converted to snow-budget units by multiplying by `-(330/917)` (snow/ice density ratio). |
 
 ### Variable Availability by Model
 
-| Variable | ACCESS-CM2 | HadGEM3 / UKESM | NorESM2 | CESM2-LE |
-|---|:---:|:---:|:---:|:---:|
-| Ice: basal growth | ✓ | ✓ | ✓ | ✓ |
-| Ice: frazil | ✓ | ✓ | ✓ | ✓ |
-| Ice: snow→ice | ✓ | ✓ | ✓ | ✓ |
-| Ice: top/basal/lateral melt | ✓ | ✓ | ✓ | ✓ |
-| Ice: evap/sublimation | ✓ | ✓ | ✓ | ✓ |
-| Ice: dynamics | ✓ | ✓ | ✓ | ✓ |
-| Snow: snowfall | ✓ | ✓ | ✓ | ✓ |
-| Snow: snowmelt | ✓ | ✓ | ✓ | ✓ |
-| Snow: snow→ice | ✓ | ✓ | ✓ | ✓ |
-| Snow: dynamics | ✓ | ✓ | — | — |
-| Snow: wind drift | — | — | ✓ | — |
-| Snow: evap/sublimation | — | — | — | ✓ |
+Availability across the full CMIP6 archive (native grid, `SImon`, `ssp245`) as surfaced by the catalog search in `model_load.ipynb` (`availability_df`), plus CESM2-LE (loaded separately from NCAR storage, not through the ESGF/cloud catalog). **Bold** rows are the models currently used in the Sankey figures (alphabetical order).
+
+**Ice Mass Budget**
+
+| Model | Top Melt | Basal Melt | Lateral Melt | Basal Growth | Frazil | Snow→Ice | Evap/Subl | Dynamics |
+|---|---|---|---|---|---|---|---|---|
+| **ACCESS-CM2** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| ACCESS-ESM1-5 | — | — | — | — | — | — | ✓ | — |
+| AWI-CM-1-1-MR | — | — | — | — | — | ✓ | ✓ | — |
+| BCC-CSM2-MR | ✓ | ✓ | — | — | ✓ | ✓ | ✓ | — |
+| CAMS-CSM1-0 | ✓ | ✓ | — | — | — | ✓ | ✓ | — |
+| CAS-ESM2-0 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ |
+| CESM2 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| **CESM2-LE** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| CESM2-WACCM | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| CIESM | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| CMCC-CM2-SR5 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| CMCC-ESM2 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| CNRM-CM6-1 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| CNRM-CM6-1-HR | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| CNRM-ESM2-1 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| EC-Earth3 | ✓ | ✓ | — | ✓ | ✓ | ✓ | ✓ | ✓ |
+| EC-Earth3-CC | ✓ | ✓ | — | ✓ | ✓ | ✓ | ✓ | — |
+| EC-Earth3-Veg | ✓ | ✓ | — | ✓ | ✓ | ✓ | ✓ | — |
+| EC-Earth3-Veg-LR | ✓ | ✓ | — | ✓ | ✓ | ✓ | ✓ | — |
+| FGOALS-f3-L | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ |
+| FGOALS-g3 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ |
+| FIO-ESM-2-0 | — | — | — | — | — | — | — | — |
+| GISS-E2-1-G | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — |
+| GISS-E2-1-G-CC | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — |
+| GISS-E2-1-H | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — |
+| GISS-E2-2-G | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — |
+| **HadGEM3-GC31-LL** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| IPSL-CM6A-LR | ✓ | ✓ | — | ✓ | ✓ | ✓ | ✓ | ✓ |
+| MPI-ESM1-2-HR | — | — | — | — | — | — | — | ✓ |
+| MPI-ESM1-2-LR | — | — | — | — | — | — | — | ✓ |
+| MRI-ESM2-0 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| NESM3 | — | — | — | — | — | — | — | — |
+| **NorESM2-LM** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| **NorESM2-MM** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| TaiESM1 | ✓ | ✓ | — | ✓ | ✓ | — | — | — |
+| **UKESM1-0-LL** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+
+**Snow Mass Budget**
+
+| Model | Melt | Snowfall | Snow→Ice | Evap/Subl | Wind Drift | Dynamics |
+|---|---|---|---|---|---|---|
+| **ACCESS-CM2** | ✓ | ✓ | ✓ | — | — | ✓ |
+| ACCESS-ESM1-5 | — | ✓ | — | — | — | — |
+| AWI-CM-1-1-MR | — | — | — | — | — | — |
+| BCC-CSM2-MR | ✓ | ✓ | — | — | — | — |
+| CAMS-CSM1-0 | — | ✓ | — | — | — | — |
+| CAS-ESM2-0 | ✓ | ✓ | — | — | — | — |
+| CESM2 | ✓ | ✓ | — | — | — | — |
+| **CESM2-LE** | ✓ | ✓ | ✓ | ✓ | — | — |
+| CESM2-WACCM | ✓ | ✓ | — | ✓ | — | — |
+| CIESM | ✓ | ✓ | — | — | — | — |
+| CMCC-CM2-SR5 | ✓ | ✓ | — | ✓ | — | — |
+| CMCC-ESM2 | ✓ | ✓ | — | ✓ | — | — |
+| CNRM-CM6-1 | ✓ | ✓ | ✓ | ✓ | — | ✓ |
+| CNRM-CM6-1-HR | ✓ | ✓ | ✓ | ✓ | — | ✓ |
+| CNRM-ESM2-1 | ✓ | ✓ | ✓ | ✓ | — | ✓ |
+| EC-Earth3 | ✓ | ✓ | ✓ | ✓ | — | ✓ |
+| EC-Earth3-CC | ✓ | ✓ | — | — | — | — |
+| EC-Earth3-Veg | ✓ | ✓ | — | — | — | — |
+| EC-Earth3-Veg-LR | ✓ | ✓ | — | — | — | — |
+| FGOALS-f3-L | ✓ | ✓ | ✓ | — | — | — |
+| FGOALS-g3 | ✓ | ✓ | ✓ | — | — | — |
+| FIO-ESM-2-0 | — | ✓ | — | — | — | — |
+| GISS-E2-1-G | — | ✓ | — | — | — | — |
+| GISS-E2-1-G-CC | — | ✓ | — | — | — | — |
+| GISS-E2-1-H | — | ✓ | — | — | — | — |
+| GISS-E2-2-G | — | ✓ | — | — | — | — |
+| **HadGEM3-GC31-LL** | ✓ | ✓ | ✓ | — | — | ✓ |
+| IPSL-CM6A-LR | ✓ | ✓ | ✓ | ✓ | — | ✓ |
+| MPI-ESM1-2-HR | — | ✓ | — | — | — | ✓ |
+| MPI-ESM1-2-LR | — | ✓ | — | — | — | ✓ |
+| MRI-ESM2-0 | ✓ | ✓ | ✓ | ✓ | — | ✓ |
+| NESM3 | — | — | ✓ | — | — | — |
+| **NorESM2-LM** | ✓ | ✓ | ✓ | — | ✓ | — |
+| **NorESM2-MM** | ✓ | ✓ | ✓ | — | ✓ | — |
+| TaiESM1 | ✓ | — | — | — | — | — |
+| **UKESM1-0-LL** | ✓ | ✓ | ✓ | — | — | ✓ |
+
+**Note:** Snow-side snow→ice conversion (`sndmasssi`) is missing for many models, but can be derived from the ice-side snow-to-ice tendency (`sidmasssi`) via the snow/ice density ratio when the ice-side variable is available. This is how CESM2-LE's `sndmasssi` is computed (see [Model-Specific Corrections](#snow-mass-budget)).
 
 ## Known Issues and Caveats
 
