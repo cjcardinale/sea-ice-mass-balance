@@ -101,20 +101,20 @@ Several models required corrections to standardize outputs to a common sign conv
 
 ### Variable Availability by Model
 
-Availability across the full CMIP6 archive (native grid, `SImon`, `ssp245`) as surfaced by the catalog search in `model_load.ipynb` (`availability_df`), plus CESM2-LE (loaded separately from NCAR storage, not through the ESGF/cloud catalog). **Bold** rows are the models currently used in the Sankey figures (alphabetical order).
+Availability across the full CMIP6 archive (native grid, `SImon`, `ssp245`) as surfaced by the catalog search in `model_load.ipynb` (`availability_df`), plus CESM2-LE (loaded separately from NCAR storage, not through the ESGF/cloud catalog). ⭐ marks the models currently used in the Sankey figures (alphabetical order).
 
 **Ice Mass Budget**
 
 | Model | Top Melt | Basal Melt | Lateral Melt | Basal Growth | Frazil | Snow→Ice | Evap/Subl | Dynamics |
 |---|---|---|---|---|---|---|---|---|
-| **ACCESS-CM2** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| ⭐ ACCESS-CM2 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | ACCESS-ESM1-5 | — | — | — | — | — | — | ✓ | — |
 | AWI-CM-1-1-MR | — | — | — | — | — | ✓ | ✓ | — |
 | BCC-CSM2-MR | ✓ | ✓ | — | — | ✓ | ✓ | ✓ | — |
 | CAMS-CSM1-0 | ✓ | ✓ | — | — | — | ✓ | ✓ | — |
 | CAS-ESM2-0 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ |
 | CESM2 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| **CESM2-LE** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| ⭐ CESM2-LE | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | CESM2-WACCM | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | CIESM | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | CMCC-CM2-SR5 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
@@ -133,29 +133,29 @@ Availability across the full CMIP6 archive (native grid, `SImon`, `ssp245`) as s
 | GISS-E2-1-G-CC | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — |
 | GISS-E2-1-H | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — |
 | GISS-E2-2-G | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — |
-| **HadGEM3-GC31-LL** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| ⭐ HadGEM3-GC31-LL | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | IPSL-CM6A-LR | ✓ | ✓ | — | ✓ | ✓ | ✓ | ✓ | ✓ |
 | MPI-ESM1-2-HR | — | — | — | — | — | — | — | ✓ |
 | MPI-ESM1-2-LR | — | — | — | — | — | — | — | ✓ |
 | MRI-ESM2-0 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | NESM3 | — | — | — | — | — | — | — | — |
-| **NorESM2-LM** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| **NorESM2-MM** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| ⭐ NorESM2-LM | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| ⭐ NorESM2-MM | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | TaiESM1 | ✓ | ✓ | — | ✓ | ✓ | — | — | — |
-| **UKESM1-0-LL** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| ⭐ UKESM1-0-LL | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 
 **Snow Mass Budget**
 
 | Model | Melt | Snowfall | Snow→Ice | Evap/Subl | Wind Drift | Dynamics |
 |---|---|---|---|---|---|---|
-| **ACCESS-CM2** | ✓ | ✓ | ✓ | — | — | ✓ |
+| ⭐ ACCESS-CM2 | ✓ | ✓ | ✓ | — | — | ✓ |
 | ACCESS-ESM1-5 | — | ✓ | — | — | — | — |
 | AWI-CM-1-1-MR | — | — | — | — | — | — |
 | BCC-CSM2-MR | ✓ | ✓ | — | — | — | — |
 | CAMS-CSM1-0 | — | ✓ | — | — | — | — |
 | CAS-ESM2-0 | ✓ | ✓ | — | — | — | — |
 | CESM2 | ✓ | ✓ | — | — | — | — |
-| **CESM2-LE** | ✓ | ✓ | ✓ | ✓ | — | — |
+| ⭐ CESM2-LE | ✓ | ✓ | ✓ | ✓ | — | — |
 | CESM2-WACCM | ✓ | ✓ | — | ✓ | — | — |
 | CIESM | ✓ | ✓ | — | — | — | — |
 | CMCC-CM2-SR5 | ✓ | ✓ | — | ✓ | — | — |
@@ -174,16 +174,16 @@ Availability across the full CMIP6 archive (native grid, `SImon`, `ssp245`) as s
 | GISS-E2-1-G-CC | — | ✓ | — | — | — | — |
 | GISS-E2-1-H | — | ✓ | — | — | — | — |
 | GISS-E2-2-G | — | ✓ | — | — | — | — |
-| **HadGEM3-GC31-LL** | ✓ | ✓ | ✓ | — | — | ✓ |
+| ⭐ HadGEM3-GC31-LL | ✓ | ✓ | ✓ | — | — | ✓ |
 | IPSL-CM6A-LR | ✓ | ✓ | ✓ | ✓ | — | ✓ |
 | MPI-ESM1-2-HR | — | ✓ | — | — | — | ✓ |
 | MPI-ESM1-2-LR | — | ✓ | — | — | — | ✓ |
 | MRI-ESM2-0 | ✓ | ✓ | ✓ | ✓ | — | ✓ |
 | NESM3 | — | — | ✓ | — | — | — |
-| **NorESM2-LM** | ✓ | ✓ | ✓ | — | ✓ | — |
-| **NorESM2-MM** | ✓ | ✓ | ✓ | — | ✓ | — |
+| ⭐ NorESM2-LM | ✓ | ✓ | ✓ | — | ✓ | — |
+| ⭐ NorESM2-MM | ✓ | ✓ | ✓ | — | ✓ | — |
 | TaiESM1 | ✓ | — | — | — | — | — |
-| **UKESM1-0-LL** | ✓ | ✓ | ✓ | — | — | ✓ |
+| ⭐ UKESM1-0-LL | ✓ | ✓ | ✓ | — | — | ✓ |
 
 **Note:** Snow-side snow→ice conversion (`sndmasssi`) is missing for many models, but can be derived from the ice-side snow-to-ice tendency (`sidmasssi`) via the snow/ice density ratio when the ice-side variable is available. This is how CESM2-LE's `sndmasssi` is computed (see [Model-Specific Corrections](#snow-mass-budget)).
 
