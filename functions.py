@@ -141,7 +141,7 @@ def _plotly_sankey_fig(res_label, res_color, inflows, outflows,
                        model_label, budget_type, title=None,
                        inflow_group=None, outflow_group=None, scale_ref=None,
                        show_values=True, show_residual=True, subtitle=None,
-                       hide_terminal_nodes=False):
+                       hide_terminal_nodes=False, show_percent=False):
     """
     Build a Plotly Sankey figure for a mass budget.
 
@@ -156,6 +156,8 @@ def _plotly_sankey_fig(res_label, res_color, inflows, outflows,
 
     show_values: if False, omit Gt yr⁻¹ numbers from node labels.
     show_residual: if False, strip the Residual balancing node from the diagram.
+    show_percent: if True, add each node's share of its side's total (inflows
+      as % of total sources, outflows as % of total sinks) in parentheses.
     subtitle: optional string shown as a small annotation in the top-left corner.
     """
     import plotly.graph_objects as go
@@ -167,10 +169,20 @@ def _plotly_sankey_fig(res_label, res_color, inflows, outflows,
     n_in  = len(inflows)
     n_out = len(outflows)
 
-    def _node_label(lb, v):
-        return f"{lb} ({_fmt(v)} Gt yr⁻¹)" if show_values else lb
+    total_in  = sum(v for v, *_ in inflows)  or 1.0
+    total_out = sum(v for v, *_ in outflows) or 1.0
 
-    node_labels = [_node_label(lb, v) for v, lb, _ in inflows]
+    def _node_label(lb, v, total=None):
+        parts = []
+        if show_values:
+            parts.append(f"{_fmt(v)} Gt yr⁻¹")
+        if show_percent and total is not None:
+            parts.append(f"{100 * v / total:.0f}%")
+        if not parts:
+            return lb
+        return f"{lb} ({', '.join(parts)})" if lb else f"({', '.join(parts)})"
+
+    node_labels = [_node_label(lb, v, total_in) for v, lb, _ in inflows]
     node_colors = [col for *_, col in inflows]
     node_x = [0.01] * n_in
 
@@ -201,10 +213,7 @@ def _plotly_sankey_fig(res_label, res_color, inflows, outflows,
             combined_y = sum(node_y[i] * inflows[i][0] for i in grouped) / combined_total
             group_idx = len(node_labels)
             group_name = inflow_group.get("name")
-            if show_values:
-                group_label = f"{group_name} ({_fmt(combined_total)} Gt yr⁻¹)" if group_name else f"{_fmt(combined_total)} Gt yr⁻¹"
-            else:
-                group_label = group_name if group_name else ""
+            group_label = _node_label(group_name or "", combined_total) if show_values else (group_name or "")
             node_labels.append(group_label)
             node_colors.append(inflow_group["color"])
             node_x.append(0.25)
@@ -216,7 +225,7 @@ def _plotly_sankey_fig(res_label, res_color, inflows, outflows,
     node_x.append(0.50)
     node_y.append(0.5)
 
-    node_labels += [_node_label(lb, v) for v, lb, _ in outflows]
+    node_labels += [_node_label(lb, v, total_out) for v, lb, _ in outflows]
     node_colors += [col for *_, col in outflows]
     node_x += [0.99] * n_out
     node_y += out_ys
@@ -230,10 +239,7 @@ def _plotly_sankey_fig(res_label, res_color, inflows, outflows,
             combined_out_y = sum(out_ys[j] * outflows[j][0] for j in out_grouped) / combined_out_total
             out_group_idx = len(node_labels)
             out_group_name = outflow_group.get("name")
-            if show_values:
-                out_group_label = f"{out_group_name} ({_fmt(combined_out_total)} Gt yr⁻¹)" if out_group_name else f"{_fmt(combined_out_total)} Gt yr⁻¹"
-            else:
-                out_group_label = out_group_name if out_group_name else ""
+            out_group_label = _node_label(out_group_name or "", combined_out_total) if show_values else (out_group_name or "")
             node_labels.append(out_group_label)
             node_colors.append(outflow_group["color"])
             node_x.append(0.7)
@@ -332,6 +338,14 @@ def _plotly_sankey_fig(res_label, res_color, inflows, outflows,
         width=950,
         paper_bgcolor="white",
         margin=dict(l=20, r=20, t=60, b=120),
+        annotations=[
+            dict(x=0.47, y=1.06, xref="paper", yref="paper", text="sources",
+                 showarrow=False, xanchor="right",
+                 font=dict(size=11, color="#888888")),
+            dict(x=0.53, y=1.06, xref="paper", yref="paper", text="sinks",
+                 showarrow=False, xanchor="left",
+                 font=dict(size=11, color="#888888")),
+        ],
     )
     return fig
 
@@ -375,7 +389,7 @@ def _ice_reservoir_total(ice_budget, model=None):
 def make_ice_sankey_plotly(ice_budget, model=None, res_label=None, title=None,
                            inflow_group_name=None, outflow_group_name=None, scale_ref=None,
                            show_values=True, show_residual=True, subtitle=None, res_color=None,
-                           hide_terminal_nodes=False):
+                           hide_terminal_nodes=False, show_percent=False):
     """Ice mass budget as an interactive Plotly Sankey."""
     import plotly.graph_objects as go
     s = lambda da: _sel(da, model)
@@ -390,7 +404,7 @@ def make_ice_sankey_plotly(ice_budget, model=None, res_label=None, title=None,
                               inflows, outflows, label, "Sea Ice Mass", title=title,
                               inflow_group=inflow_group, outflow_group=outflow_group, scale_ref=scale_ref,
                               show_values=show_values, show_residual=show_residual, subtitle=subtitle,
-                              hide_terminal_nodes=hide_terminal_nodes)
+                              hide_terminal_nodes=hide_terminal_nodes, show_percent=show_percent)
 
 
 # ── Sankey: snow mass budget ───────────────────────────────────────────────────
@@ -430,7 +444,7 @@ def _snow_reservoir_total(snow_budget, model=None):
 
 def make_snow_sankey_plotly(snow_budget, model=None, res_label=None, title=None, scale_ref=None,
                             show_values=True, show_residual=True, subtitle=None, res_color=None,
-                            hide_terminal_nodes=False):
+                            hide_terminal_nodes=False, show_percent=False):
     """Snow mass budget as an interactive Plotly Sankey."""
     import plotly.graph_objects as go
     s = lambda da: _sel(da, model)
@@ -443,7 +457,7 @@ def make_snow_sankey_plotly(snow_budget, model=None, res_label=None, title=None,
                               inflows, outflows, label, "Snow on Sea Ice Mass", title=title,
                               scale_ref=scale_ref, show_values=show_values,
                               show_residual=show_residual, subtitle=subtitle,
-                              hide_terminal_nodes=hide_terminal_nodes)
+                              hide_terminal_nodes=hide_terminal_nodes, show_percent=show_percent)
 
 # ––––– Spatial Masking –––––––––––––––––
 
