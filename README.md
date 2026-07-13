@@ -44,17 +44,17 @@ The diagrams show the primary sources (basal growth, frazil ice, snowfall, snowâ
 
 ### Ice Mass Budget
 **Southern Ocean**
-![SO Ice MME](figures/ice_sankey_SO_MME.png)
+![SO Ice MME](figures/ice_sankey_SO_MME_2015-2034.png)
 
 **Arctic Ocean**
-![AO Ice MME](figures/ice_sankey_AO_MME.png)
+![AO Ice MME](figures/ice_sankey_AO_MME_2015-2034.png)
 
 ### Snow Mass Budget
 **Southern Ocean**
-![SO Snow MME](figures/snow_sankey_SO_MME.png)
+![SO Snow MME](figures/snow_sankey_SO_MME_2015-2034.png)
 
 **Arctic Ocean**
-![AO Snow MME](figures/snow_sankey_AO_MME.png)
+![AO Snow MME](figures/snow_sankey_AO_MME_2015-2034.png)
 
 ## Models and Period
 
