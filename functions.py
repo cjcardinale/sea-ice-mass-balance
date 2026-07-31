@@ -57,10 +57,7 @@ def drop_sel(ds: xr.Dataset, sids=('CESM2-LE',)):
         return ds.sel(member_id=members_to_keep)
 
 
-# ── Sankey: model list and colour palette ──────────────────────────────────────
-
-SANKEY_MODELS = ["ACCESS-CM2", "HadGEM3-GC31-LL", "UKESM1-0-LL",
-                 "CESM2-LE",   "NorESM2-LM",       "NorESM2-MM"]
+# ── Sankey: color palette ──────────────────────────────────────
 
 # Blue = thermodynamic gains   Red/orange = thermodynamic losses   Gray = dynamics
 _C = {
@@ -141,7 +138,8 @@ def _plotly_sankey_fig(res_label, res_color, inflows, outflows,
                        model_label, budget_type, title=None,
                        inflow_group=None, outflow_group=None, scale_ref=None,
                        show_values=True, show_residual=True, subtitle=None,
-                       hide_terminal_nodes=False, show_percent=False):
+                       hide_terminal_nodes=False, show_percent=False,
+                       sources_sinks_y=1.0, res_label_y=0.12):
     """
     Build a Plotly Sankey figure for a mass budget.
 
@@ -282,6 +280,13 @@ def _plotly_sankey_fig(res_label, res_color, inflows, outflows,
 
     hover = [f"{v:,.0f} Gt yr⁻¹" for v in values]
 
+    # The reservoir node's own label is pulled out of the inline Sankey node label (which
+    # Plotly draws right next to the node, crowding the adjacent source/sink flow labels)
+    # and rendered as a standalone annotation above the plot instead. Hover text is kept
+    # intact via customdata.
+    node_display_labels = list(node_labels)
+    node_display_labels[res_idx] = ""
+
     NODE_THICKNESS = 14
     NODE_PAD = 22
     fig = go.Figure(go.Sankey(
@@ -290,11 +295,12 @@ def _plotly_sankey_fig(res_label, res_color, inflows, outflows,
             pad=NODE_PAD,
             thickness=NODE_THICKNESS,
             line=dict(color="white", width=0),
-            label=node_labels,
+            label=node_display_labels,
             color=node_colors,
             x=node_x,
             y=node_y,
-            hovertemplate="%{label}<extra></extra>",
+            customdata=node_labels,
+            hovertemplate="%{customdata}<extra></extra>",
         ),
         link=dict(
             source=sources,
@@ -339,10 +345,14 @@ def _plotly_sankey_fig(res_label, res_color, inflows, outflows,
         paper_bgcolor="white",
         margin=dict(l=20, r=20, t=60, b=120),
         annotations=[
-            dict(x=0.47, y=1.06, xref="paper", yref="paper", text="sources",
+            dict(x=node_x[res_idx], y=res_label_y, xref="paper", yref="paper",
+                 text=res_label, showarrow=False,
+                 xanchor="center", yanchor="top",
+                 font=dict(size=11, color="#333333")),
+            dict(x=0.47, y=sources_sinks_y, xref="paper", yref="paper", text="sources",
                  showarrow=False, xanchor="right",
                  font=dict(size=11, color="#888888")),
-            dict(x=0.53, y=1.06, xref="paper", yref="paper", text="sinks",
+            dict(x=0.53, y=sources_sinks_y, xref="paper", yref="paper", text="sinks",
                  showarrow=False, xanchor="left",
                  font=dict(size=11, color="#888888")),
         ],
@@ -370,14 +380,14 @@ def _ice_flows(ice_budget, model=None):
         (abs(si_v), "Snow→ice",    _C["snow2ice_g"]),
         (abs(fr_v), "Open water ice production",      _C["frazil"]),
         (abs(bg_v), "Basal growth", _C["basal_g"]),
-        (dyn_in,    "Dyn. import",  _C["dyn_in"]),
+        (dyn_in,    "Dynamics",  _C["dyn_in"]),
     ]
     outflows = [
         (abs(es_v), "Evap/subl",   _C["evapsubl"]),
         (abs(tm_v), "Top melt",     _C["top_melt"]),
-        (dyn_out,   "Dyn. export",  _C["dyn_out"]),
         (abs(lm_v), "Lateral melt", _C["lat_melt"]),
         (abs(bm_v), "Basal melt",   _C["basal_melt"]),
+        (dyn_out,   "Dynamics",  _C["dyn_out"]),
     ]
     return inflows, outflows
 
@@ -425,15 +435,15 @@ def _snow_flows(snow_budget, model=None):
 
     inflows = [
         (abs(sf_v), "Snowfall",    _C["snowfall"]),
-        (dyn_in,    "Dyn. import", _C["dyn_in"]),
-        (wind_in,   "Wind import", _C["wind_in"]),
+        (dyn_in,    "Dynamics", _C["dyn_in"]),
+        (wind_in,   "Wind drift", _C["wind_in"]),
     ]
     outflows = [
         (abs(es_v),  "Evap/subl",  _C["evapsubl"]),
-        (wind_out,   "Wind export", _C["wind_out"]),
+        (wind_out,   "Wind drift", _C["wind_out"]),
         (abs(sm_v),  "Snowmelt",    _C["snowmelt"]),
         (abs(s2_v),  "Snow→ice",   _C["snow2ice_s"]),
-        (dyn_out,    "Dyn. export", _C["dyn_out"]),
+        (dyn_out,    "Dynamics", _C["dyn_out"]),
     ]
     return inflows, outflows
 
@@ -457,7 +467,8 @@ def make_snow_sankey_plotly(snow_budget, model=None, res_label=None, title=None,
                               inflows, outflows, label, "Snow on Sea Ice Mass", title=title,
                               scale_ref=scale_ref, show_values=show_values,
                               show_residual=show_residual, subtitle=subtitle,
-                              hide_terminal_nodes=hide_terminal_nodes, show_percent=show_percent)
+                              hide_terminal_nodes=hide_terminal_nodes, show_percent=show_percent,
+                              sources_sinks_y=1.03, res_label_y=0.06)
 
 # ––––– Spatial Masking –––––––––––––––––
 

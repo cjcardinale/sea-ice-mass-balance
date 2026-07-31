@@ -14,10 +14,11 @@ import geopandas as gp
 from xmip.preprocessing import rename_cmip6, promote_empty_dims, broadcast_lonlat, replace_x_y_nominal_lat_lon, combined_preprocessing, correct_lon, parse_lon_lat_bounds, correct_coordinates, maybe_convert_bounds_to_vertex, maybe_convert_vertex_to_bounds, sort_vertex_order, fix_metadata, correct_units
 from importlib.resources import files
 import os
+import socket
 import warnings
 from pyesgf.search import SearchConnection
 warnings.filterwarnings('ignore')
-from io import StringIO  
+from io import StringIO
 import sys
 from copy import deepcopy
 from pyproj import Geod
@@ -25,9 +26,17 @@ from scipy.interpolate import griddata
 from dask.diagnostics import ProgressBar
 import intake_esgf
 import glob
-#intake_esgf.conf.set(all_indices=True) 
-#intake_esgf.conf.set(all_indices=True) 
-#intake_esgf.conf.set(indices={"esgf.nci.org.au":False})
+
+# intake-esgf's requests session has no HTTP timeout, and ESGFCatalog.search()
+# blocks until every enabled index responds. A single unresponsive index (common
+# with the legacy Solr nodes below) would otherwise hang search() forever.
+socket.setdefaulttimeout(30)
+
+# If a model/variable isn't found via the default Globus catalog alone, try
+# uncommenting this to also search the (flakier) legacy Solr indices below —
+# now safe to leave on since socket.setdefaulttimeout(30) above prevents a dead
+# index from hanging search() forever.
+#intake_esgf.conf.set(all_indices=True)
 #intake_esgf.conf.set(indices={"esgf.nci.org.au":False})
 #intake_esgf.conf.set(indices={"esg-dn1.nsc.liu.se":False})
 #intake_esgf.conf.set(indices={"esgf.ceda.ac.uk":False})
@@ -39,7 +48,9 @@ import glob
 #intake_esgf.conf.set(indices={"anl-dev":True})
 #intake_esgf.conf.set(indices={"ornl-dev":True})
 #intake_esgf.conf["break_on_error"] = False
-intake_esgf.conf.set(all_indices=True, break_on_error=False)
+# Rely on the default Globus catalog (ESGF2-US-1.5-Catalog) instead of forcing on
+# all 5 legacy Solr indices, which are flaky and can each stall a search.
+intake_esgf.conf.set(break_on_error=False)
 from intake_esgf import ESGFCatalog
 from intake_esgf.exceptions import NoSearchResults
 from globus_sdk.services.search.errors import SearchAPIError
