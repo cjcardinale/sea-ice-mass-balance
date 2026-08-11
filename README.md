@@ -60,12 +60,18 @@ The diagrams show the primary sources (basal growth, frazil ice, snowfall, snow�
 
 | Model | Institution | Notes |
 |---|---|---|
-| ACCESS-CM2 | CSIRO/ARCCSS | Ice budget requires area-basis and sign corrections; excluded from snow budget due to unreliable snowmelt output |
+| ACCESS-CM2 | CSIRO/ARCCSS | Requires area-basis, sign, and snowmelt corrections (see [Model-Specific Corrections](#model-specific-corrections)) |
 | HadGEM3-GC31-LL | Met Office | Snow dynamics available; no snow wind drift or snow sublimation output |
 | UKESM1-0-LL | Met Office / MOHC | Snow dynamics available; no snow wind drift or snow sublimation output |
-| NorESM2-LM | NCC | Snow wind drift available; no snow dynamics or snow sublimation; snowfall and snowmelt require sign/unit corrections |
-| NorESM2-MM | NCC | Snow wind drift available; no snow dynamics or snow sublimation; snowfall and snowmelt require sign/unit corrections |
-| CESM2-LE | NCAR | Large ensemble (100 members); only model with snow evaporation/sublimation output |
+| NorESM2-LM | NCC | Snow wind drift available; no snow dynamics or snow sublimation; requires sign/unit corrections |
+| NorESM2-MM | NCC | Snow wind drift available; no snow dynamics or snow sublimation; requires sign/unit corrections |
+| CESM2 | NCAR | Requires melt-term sign corrections |
+| CESM2-WACCM | NCAR | Requires the same corrections as CESM2, plus per-member archiving fixes |
+| CESM2-LE | NCAR | Large ensemble (100 members); **optional, off by default** — superseded by CESM2 + CESM2-WACCM in the default multi-model mean (set `add_CESM2_LE=True` in `sankey_figures_clean.ipynb` to include it) |
+| MRI-ESM2-0 | MRI | No corrections needed; no snow wind drift output |
+| CNRM-CM6-1 | CNRM-CERFACS | Basal growth/top melt are approximated (see caveats); no snow wind drift output |
+| CNRM-CM6-1-HR | CNRM-CERFACS | Basal growth/top melt are approximated (see caveats); no snow wind drift output |
+| CNRM-ESM2-1 | CNRM-CERFACS | Basal growth/top melt are approximated (see caveats); no snow wind drift output |
 
 **Period:** 2015–2034 (20-year climatological mean across all available ensemble members)
 
@@ -75,7 +81,9 @@ Two notebooks run in sequence:
 
 1. **`model_load.ipynb`** — Loads gridded CMIP6 budget variables from ESGF/Pangeo and CESM2-LE from local storage or THREDDS OPeNDAP. Applies all model-specific corrections (see below). Area-integrates fluxes over the Southern Ocean, Weddell Sea, and Arctic Ocean. Saves one `.nc` file per variable per model to `save_path`. Process one CMIP6 model at a time by setting `models`.
 
-2. **`sankey_figures.ipynb`** — Reads the `.nc` files from `melt_path` (must match `save_path`), merges CMIP6 and CESM2-LE data, and generates Sankey diagrams for each model and the multi-model ensemble mean. Figures are written to `figures/` as both `.png` and `.pdf` and optionally `.svg`.
+2. **`sankey_figures_clean.ipynb`** — Reads the `.nc` files from `melt_path` (must match `save_path`), merges CMIP6 and CESM2-LE data, and generates Sankey diagrams for each model and the multi-model ensemble mean. Figures are written to `figures/` as both `.png` and `.pdf` and optionally `.svg`.
+
+Separately, **`era5_sankey.ipynb`** builds a comparison Sankey from an ERA5-forced NEMO-SI3 ocean–sea ice simulation (eORCA025, 2000–2024, data provided by Benjamin Richaud) — independent of the CMIP6 loading pipeline above, used to sanity-check the model Sankeys against a forced-reanalysis baseline.
 
 ## Model-Specific Corrections
 
@@ -87,21 +95,26 @@ Several models required corrections to standardize outputs to a common sign conv
 |---|---|
 | **ACCESS-CM2** | `sidmassth` and `sidmassdyn` are per grid-cell area (no scaling needed). All other ice flux variables are incorrectly reported per sea-ice area — multiplied by `siconc/100` to convert to per grid-cell area before integration. `sidmassevapsubl` is reported positive (mass loss) — multiplied by −1 to enforce the loss-negative sign convention. |
 | **HadGEM3-GC31-LL, UKESM1-0-LL** | `sidmassevapsubl` is reported positive (mass loss) — multiplied by −1 to enforce the loss-negative sign convention. |
-| **NorESM2-LM, NorESM2-MM** | `sidmassmelttop`, `sidmassmeltbot`, and `sidmasslat` are reported positive (mass loss) — multiplied by −1 to enforce the loss-negative sign convention. |
-| **CESM2-LE** | `sidmassmelttop`, `sidmassmeltbot`, and `sidmasslat` are reported positive (mass loss) — multiplied by −1 to enforce the loss-negative sign convention. |
+| **NorESM2-LM, NorESM2-MM, CESM2, CESM2-LE** | `sidmassmelttop`, `sidmassmeltbot`, and `sidmasslat` are reported positive (mass loss) — multiplied by −1 to enforce the loss-negative sign convention. |
+| **CESM2-WACCM** | Same melt-term sign correction as CESM2. Per-member archiving issues, not model-wide: only member `r1i1p1f1` has `sidmassgrowthbot`, `sidmassgrowthwat`, `sidmasssi`, `sidmassmelttop`, `sidmassmeltbot`, and `sidmasslat` archived 1800× too small (consistent with CESM2's 30-minute ice–ocean coupling interval, though the root cause hasn't been confirmed) — that member is rescaled ×1800, others are left as archived. Conversely, `sidmassevapsubl` is 1e6× too large in every member *except* `r1i1p1f1` — those members are rescaled ÷1e6. `sidmassth` and `sidmassdyn` needed no correction in any member. |
+| **MRI-ESM2-0** | No corrections needed — archived terms already follow the CF sign convention. |
+| **CNRM-CM6-1, CNRM-CM6-1-HR, CNRM-ESM2-1** | `sidmassgrowthbot` (basal growth) and `sidmassmelttop` (top melt) are reconstructed from their sum: the two raw terms are added together, then the combined field is split by sign — positive values assigned to basal growth, negative values to top melt. This is an approximation: a grid cell with both growth and melt in the same month is misattributed entirely to whichever process dominates. All other ice terms need no correction. |
 
 ### Snow Mass Budget
 
 | Model | Correction |
 |---|---|
-| **ACCESS-CM2** | All snow variables reported per sea-ice area — multiplied by `siconc/100`. Snowmelt (`sndmassmelt`) is anomalously large; divided by 3.3 (snow density / 100) as a correction. `sndmasswindrif` and `sndmasssubl` are unavailable. |
+| **ACCESS-CM2** | All snow variables reported per sea-ice area — multiplied by `siconc/100`. Snowmelt (`sndmassmelt`) is anomalously large: CICE's cm/day → kg/s conversion should use snow density (330 kg m⁻³), but ACCESS-CM2 appears to have used freshwater density (1000 kg m⁻³) instead — corrected by dividing by `1000/330`. This diagnosis isn't confirmed in ACCESS-CM2's own documentation, but the corrected magnitudes now align with other models. `sndmasswindrif` and `sndmasssubl` are unavailable. |
 | **HadGEM3-GC31-LL, UKESM1-0-LL** | `sndmasswindrif` and `sndmasssubl` are unavailable. |
 | **NorESM2-LM, NorESM2-MM** | `sndmassmelt` is reported positive (mass loss) — multiplied by −1 to enforce the loss-negative sign convention. `sndmasssnf` values are 330× too large due to a unit conversion error in the published CMIP6 output — divided by snow density (330 kg m⁻³) to correct ([NorESMhub/noresm2cmor #282](https://github.com/NorESMhub/noresm2cmor/issues/282)). `sndmasssubl` and `sndmassdyn` are unavailable. |
+| **CESM2** | `sndmassmelt` is reported positive (mass loss) — multiplied by −1, same as CESM2-LE. |
+| **CESM2-WACCM** | Same snowmelt sign correction as CESM2. Per-member archiving issues, not model-wide: only member `r1i1p1f1` has archived snowmelt 1800× too small (same coupling-interval issue as the ice budget) — rescaled ×1800, other members left as archived. Separately, only member `r3i1p1f1` has archived snowfall ~330× too large (same snow-density-unit issue as the NorESM2 fix) — rescaled ÷330, other members' snowfall is archived correctly. `sndmasssubl` is available (unlike most models) but left unscaled since its magnitude hasn't been checked; snow-to-ice and wind drift are also not yet checked. |
 | **CESM2-LE** | `sndmassmelt` is reported positive (mass loss) — multiplied by −1 to enforce the loss-negative sign convention. Snow→ice transfer (`sidmasssi`) is on the ice-budget side — converted to snow-budget units by multiplying by `-(330/917)` (snow/ice density ratio). |
+| **MRI-ESM2-0, CNRM-CM6-1, CNRM-CM6-1-HR, CNRM-ESM2-1** | No corrections needed — archived terms already follow the CF sign convention. `sndmasswindrif` is unavailable. |
 
 ### Variable Availability by Model
 
-Availability across the full CMIP6 archive (native grid, `SImon`, `ssp245`) as surfaced by the catalog search in `model_load.ipynb` (`availability_df`), plus CESM2-LE (loaded separately from NCAR storage, not through the ESGF/cloud catalog). ⭐ marks the models currently used in the Sankey figures (alphabetical order).
+Availability across the full CMIP6 archive (native grid, `SImon`, `ssp245`) as surfaced by the catalog search in `model_load.ipynb` (`availability_df`), plus CESM2-LE (loaded separately from NCAR storage, not through the ESGF/cloud catalog). ⭐ marks the models used in the Sankey figures (alphabetical order); CESM2-LE is supported but off by default (see [Known Issues and Caveats](#known-issues-and-caveats)).
 
 **Data availability summary — 36 total models**
 
@@ -135,15 +148,15 @@ Availability across the full CMIP6 archive (native grid, `SImon`, `ssp245`) as s
 | BCC-CSM2-MR | ✓ | ✓ | — | — | ✓ | ✓ | ✓ | — |
 | CAMS-CSM1-0 | ✓ | ✓ | — | — | — | ✓ | ✓ | — |
 | CAS-ESM2-0 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ |
-| CESM2 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| ⭐ CESM2 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | ⭐ CESM2-LE | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| CESM2-WACCM | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| ⭐ CESM2-WACCM | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | CIESM | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | CMCC-CM2-SR5 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | CMCC-ESM2 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| CNRM-CM6-1 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| CNRM-CM6-1-HR | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| CNRM-ESM2-1 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| ⭐ CNRM-CM6-1 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| ⭐ CNRM-CM6-1-HR | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| ⭐ CNRM-ESM2-1 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | EC-Earth3 | ✓ | ✓ | — | ✓ | ✓ | ✓ | ✓ | ✓ |
 | EC-Earth3-CC | ✓ | ✓ | — | ✓ | ✓ | ✓ | ✓ | — |
 | EC-Earth3-Veg | ✓ | ✓ | — | ✓ | ✓ | ✓ | ✓ | — |
@@ -159,7 +172,7 @@ Availability across the full CMIP6 archive (native grid, `SImon`, `ssp245`) as s
 | IPSL-CM6A-LR | ✓ | ✓ | — | ✓ | ✓ | ✓ | ✓ | ✓ |
 | MPI-ESM1-2-HR | — | — | — | — | — | — | — | ✓ |
 | MPI-ESM1-2-LR | — | — | — | — | — | — | — | ✓ |
-| MRI-ESM2-0 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| ⭐ MRI-ESM2-0 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | NESM3 | — | — | — | — | — | — | — | — |
 | ⭐ NorESM2-LM | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | ⭐ NorESM2-MM | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
@@ -176,15 +189,15 @@ Availability across the full CMIP6 archive (native grid, `SImon`, `ssp245`) as s
 | BCC-CSM2-MR | ✓ | ✓ | — | — | — | — |
 | CAMS-CSM1-0 | — | ✓ | — | — | — | — |
 | CAS-ESM2-0 | ✓ | ✓ | — | — | — | — |
-| CESM2 | ✓ | ✓ | — | — | — | — |
+| ⭐ CESM2 | ✓ | ✓ | — | — | — | — |
 | ⭐ CESM2-LE | ✓ | ✓ | ✓ | ✓ | — | — |
-| CESM2-WACCM | ✓ | ✓ | — | ✓ | — | — |
+| ⭐ CESM2-WACCM | ✓ | ✓ | — | ✓ | — | — |
 | CIESM | ✓ | ✓ | — | — | — | — |
 | CMCC-CM2-SR5 | ✓ | ✓ | — | ✓ | — | — |
 | CMCC-ESM2 | ✓ | ✓ | — | ✓ | — | — |
-| CNRM-CM6-1 | ✓ | ✓ | ✓ | ✓ | — | ✓ |
-| CNRM-CM6-1-HR | ✓ | ✓ | ✓ | ✓ | — | ✓ |
-| CNRM-ESM2-1 | ✓ | ✓ | ✓ | ✓ | — | ✓ |
+| ⭐ CNRM-CM6-1 | ✓ | ✓ | ✓ | ✓ | — | ✓ |
+| ⭐ CNRM-CM6-1-HR | ✓ | ✓ | ✓ | ✓ | — | ✓ |
+| ⭐ CNRM-ESM2-1 | ✓ | ✓ | ✓ | ✓ | — | ✓ |
 | EC-Earth3 | ✓ | ✓ | ✓ | ✓ | — | ✓ |
 | EC-Earth3-CC | ✓ | ✓ | — | — | — | — |
 | EC-Earth3-Veg | ✓ | ✓ | — | — | — | — |
@@ -200,7 +213,7 @@ Availability across the full CMIP6 archive (native grid, `SImon`, `ssp245`) as s
 | IPSL-CM6A-LR | ✓ | ✓ | ✓ | ✓ | — | ✓ |
 | MPI-ESM1-2-HR | — | ✓ | — | — | — | ✓ |
 | MPI-ESM1-2-LR | — | ✓ | — | — | — | ✓ |
-| MRI-ESM2-0 | ✓ | ✓ | ✓ | ✓ | — | ✓ |
+| ⭐ MRI-ESM2-0 | ✓ | ✓ | ✓ | ✓ | — | ✓ |
 | NESM3 | — | — | ✓ | — | — | — |
 | ⭐ NorESM2-LM | ✓ | ✓ | ✓ | — | ✓ | — |
 | ⭐ NorESM2-MM | ✓ | ✓ | ✓ | — | ✓ | — |
@@ -212,16 +225,22 @@ Availability across the full CMIP6 archive (native grid, `SImon`, `ssp245`) as s
 ## Known Issues and Caveats
 
 - **Model results only.** These are not observationally constrained budgets.
-- **Low model diversity.** Only six models are currently included; expansion is planned.
+- **Eleven models are used by default**, up from the original six. CESM2-LE is supported but off by default, since CESM2 and CESM2-WACCM are already in the default set and including all three would over-weight the CESM2 family in the multi-model mean.
 - **Snow budgets are uncertain.** Inconsistent and incomplete snow flux outputs across models make the snow Sankeys less reliable than the ice Sankeys.
-- **ACCESS-CM2 excluded from snow budget** due to extreme snowmelt values far outside the range of budget closure. It is retained in the ice budget.
+- **Some corrections are diagnosed rather than confirmed** — the ACCESS-CM2 snowmelt fix, the CNRM basal-growth/top-melt split, and CESM2-WACCM's per-member rescaling are all inferred from the archived output rather than documented by the modeling centers. See [Model-Specific Corrections](#model-specific-corrections) for what each one assumes and how confident it is.
 - **Non-zero wind drift and dynamics at hemispheric scale.** Summing over a full hemisphere should produce near-zero dynamics and wind drift, but small non-zero values remain. This may reflect physical processes (e.g., snow lost to the ocean via wind or ice deformation at the ice edge) or model artifacts.
-- **Evaporation/sublimation** is only available from CESM2-LE on the snow side. Other models could not provide the same output split.
+- **Evaporation/sublimation** on the snow side is available for CESM2-LE, CESM2-WACCM, MRI-ESM2-0, and the CNRM models; other models do not report it.
 - **Wind drift** is only available from NorESM2 models.
 - **Ice dynamics** on the snow side is only available from HadGEM3-GC31-LL and UKESM1-0-LL.
 - **Frazil ice** calculations are inconsistent across models and require further investigation.
 
 ## Updates
+
+**August 11, 2026**
+- Expanded the default model set from six to eleven: added CESM2, CESM2-WACCM, MRI-ESM2-0, CNRM-CM6-1, CNRM-CM6-1-HR, and CNRM-ESM2-1. CESM2-LE remains supported but off by default.
+- Documented each new model's corrections (or lack thereof) in [Model-Specific Corrections](#model-specific-corrections), including CESM2-WACCM's per-member archiving fixes and the CNRM basal-growth/top-melt approximation.
+- Re-diagnosed the ACCESS-CM2 snowmelt correction as a snow-density-vs-freshwater-density unit mixup (divide by `1000/330`), replacing the earlier `/3.3` heuristic.
+- Added `era5_sankey.ipynb`, an ERA5-forced NEMO-SI3 comparison Sankey (2000–2024).
 
 **June 12, 2026**
 - Flux bar widths normalized across hemispheres to enable direct Arctic/Southern Ocean comparisons.
