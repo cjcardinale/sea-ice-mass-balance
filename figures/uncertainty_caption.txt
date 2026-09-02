@@ -1,0 +1,1 @@
+Ribbon shading encodes each term's inter-member relative spread (std/mean, capped at 60%): fully saturated means ensemble members agree closely, faded toward white means they disagree more relative to the term's own size. Node labels give each term's mean % share of its side's total, with the ±1 SD range that share would span if the term alone shifted by one standard deviation.

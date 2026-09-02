@@ -1,3 +1,8 @@
 .ipynb_checkpoints/
 __pycache__/
 data/
+files/ice_sankey_scale_ref.csv
+
+# Paper draft (not part of the code repo)
+main.tex
+gmd-18-6313-2025.pdf

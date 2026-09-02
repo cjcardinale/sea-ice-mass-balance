@@ -538,13 +538,75 @@ def _extract_urls_from_file_info(catalog, verbose=True):
     )
     return out
 
-LOCAL_ESGF_CACHE = os.path.expanduser("~/.esgf_manual")
+LOCAL_ESGF_CACHE = "/tmp/esgf_manual"
 
 def _local_cache_path(url):
     rel = urlparse(url).path.lstrip("/")
     rel = rel.replace("thredds/fileServer/", "")
     rel = rel.replace("thredds/dodsC/", "")
     return os.path.join(LOCAL_ESGF_CACHE, rel)
+
+# Set by clear_esgf_cache() below; read by the IPython display hook installed just
+# below it to add a hint alongside a FileNotFoundError that names a path under
+# LOCAL_ESGF_CACHE, explaining *why* the file is gone instead of leaving a bare
+# "No such file or directory" traceback.
+_esgf_cache_cleared_at = None
+
+def clear_esgf_cache():
+    """Delete the raw ESGF downloads under LOCAL_ESGF_CACHE (/tmp, which has limited
+    space) — call once the area-integrated outputs for a model have been saved.
+
+    Any CMIP6_* dataset built before this call is a lazy dask/xarray object that
+    still points at the now-deleted local files — reusing it afterward (re-running a
+    save/diagnostic cell without first re-running the CMIP6(...).load_data() cells)
+    will hit a FileNotFoundError with an added hint (see _install_stale_cache_hint)
+    instead of a bare traceback.
+    """
+    import shutil
+    global _esgf_cache_cleared_at
+    if os.path.isdir(LOCAL_ESGF_CACHE):
+        size_gb = sum(
+            os.path.getsize(os.path.join(dirpath, f))
+            for dirpath, _, filenames in os.walk(LOCAL_ESGF_CACHE)
+            for f in filenames
+        ) / 1e9
+        shutil.rmtree(LOCAL_ESGF_CACHE)
+        print(f"Cleared {size_gb:.2f} GB from {LOCAL_ESGF_CACHE}")
+    else:
+        print(f"{LOCAL_ESGF_CACHE} does not exist — nothing to clear")
+    _esgf_cache_cleared_at = datetime.now()
+
+def _install_stale_cache_hint():
+    """In a Jupyter/IPython session, print an explanatory hint alongside (not instead
+    of) the normal traceback whenever a FileNotFoundError under LOCAL_ESGF_CACHE
+    surfaces after clear_esgf_cache() has run. Deliberately does NOT monkeypatch
+    netCDF4/xarray internals — netCDF4.Dataset is a Cython extension type, so its
+    __init__ can't be reassigned in place, and even a subclass-swap risks breaking
+    xarray's internal `type(manager) is netCDF4.Dataset` checks used for multi-group
+    files. IPython's set_custom_exc only changes how the exception is *displayed*, so
+    it can't introduce that kind of regression."""
+    try:
+        from IPython import get_ipython
+    except ImportError:
+        return
+    shell = get_ipython()
+    if shell is None:
+        return
+
+    def _handler(shell, etype, evalue, tb, tb_offset=None):
+        shell.showtraceback((etype, evalue, tb), tb_offset=tb_offset)
+        if _esgf_cache_cleared_at is not None and LOCAL_ESGF_CACHE in str(evalue):
+            print(
+                f"\n[hint] {LOCAL_ESGF_CACHE} was cleared by clear_esgf_cache() at "
+                f"{_esgf_cache_cleared_at:%Y-%m-%d %H:%M:%S}. The CMIP6_* dataset you're "
+                "touching was built before that call, so it's now stale (it lazily points "
+                "at a deleted file). Re-run the CMIP6(...).load_data() cells for this "
+                "model to rebuild it before reading/saving it again."
+            )
+
+    shell.set_custom_exc((FileNotFoundError,), _handler)
+
+_install_stale_cache_hint()
 
 def _open_local_dataset(local_path, chunks=None, engine=None, drop_variables=None, **kwargs):
     return xr.open_dataset(
@@ -556,6 +618,16 @@ def _open_local_dataset(local_path, chunks=None, engine=None, drop_variables=Non
         use_cftime=True,
         **kwargs,
     )
+
+def _is_missing_file_error(e):
+    """True if `e` indicates the remote file itself doesn't exist (vs. a transient
+    network/server error) — retrying a genuinely missing file just wastes time."""
+    msg = str(e).lower()
+    return any(s in msg for s in (
+        "file not found",
+        "no such file or directory",
+        "404",
+    ))
 
 def _download_file_with_retries(url, local_path, n_retries=4, timeout=60, verbose=True):
     os.makedirs(os.path.dirname(local_path), exist_ok=True)
@@ -598,6 +670,11 @@ def _download_file_with_retries(url, local_path, n_retries=4, timeout=60, verbos
                     os.remove(tmp_path)
             except Exception:
                 pass
+
+            if _is_missing_file_error(e):
+                if verbose:
+                    print("File not found on this node — not retrying, moving on.")
+                raise
 
             if attempt < n_retries:
                 sleep_s = (2 ** (attempt - 1)) + random.uniform(0, 1)
@@ -643,6 +720,10 @@ def _download_and_open(url, chunks=None, engine=None, drop_variables=None, n_ret
             last_err = e
             if verbose:
                 print(f"Remote open failed ({attempt}/{n_retries}): {type(e).__name__}: {e}")
+            if _is_missing_file_error(e):
+                if verbose:
+                    print("File not found on this node — not retrying, moving on.")
+                break
             if attempt < n_retries:
                 sleep_s = (2 ** (attempt - 1)) + random.uniform(0, 1)
                 time.sleep(sleep_s)
@@ -666,6 +747,7 @@ def load_from_catalog(
     verbose: bool = True,
     esgf_url=None,
     n_retries: int = 4,
+    end_year: Optional[int] = None,
     **kwargs
 ):
     try:
@@ -682,6 +764,16 @@ def load_from_catalog(
 
         variant_pat = re.compile(r'_(r\d+i\d+p\d+f\d+)_')
         ym_pat = re.compile(r'_(\d{6})-\d{6}')
+
+        if end_year:
+            def _keep(u):
+                m2 = ym_pat.search(u)
+                return not (m2 and int(m2.group(1)[:4]) > end_year)
+            urls = [u for u in urls if _keep(u)]
+            if verbose:
+                print(f"Candidate ESGF URLs after end_year filtering: {len(urls)}")
+            if not urls:
+                return None
 
         def get_variant(fname):
             m = variant_pat.search(fname)
@@ -784,6 +876,7 @@ def load_first_valid_entry(catalog):
 class CMIP6():
     def __init__(self, variable, experiment_id, compare_exp=None, source_id='all', sector_mean=None,sector_sum=None, members=None,time_chunks=None,
                  grid_label=['gn'], new_grid=None, method='conservative_normed',client=False,sic_mask=None,verbose=False,skip_sids=None,table_id=None,
+                 end_year=None,
                  esgf_url='https://esgf-node.llnl.gov/esg-search',
                  cat_url="https://cmip6-pds.s3.amazonaws.com/pangeo-cmip6.json",
                  cat_url2="https://storage.googleapis.com/cmip6/cmip6-pgf-ingestion-test/catalog/catalog.json"):
@@ -807,6 +900,7 @@ class CMIP6():
         self.skip_sids = skip_sids
         if type(self.skip_sids)==str:
             self.skip_sids = [self.skip_sids]
+        self.end_year = end_year
         if type(self.grid_label)==str:
             self.grid_label = [self.grid_label]
         if type(self.experiment_id)==str:
@@ -1612,7 +1706,8 @@ class CMIP6():
                             postprocess=self._postprocessing,
                             prefer_opendap=False,
                             combine_method='manual',
-                            esgf_url = self.esgf_url
+                            esgf_url = self.esgf_url,
+                            end_year=self.end_year
                         )
                         #dsets = list(map(self._postprocessing,dsets))
                         dsets = list(map(self._remove_vars,dsets))
@@ -1750,12 +1845,13 @@ class CMIP6():
                             preprocess=complete_preprocessing,
                             postprocess=self._postprocessing,
                             prefer_opendap=False,
-                            combine_method='manual')
+                            combine_method='manual',
+                            end_year=self.end_year)
                         #dsets = list(map(self._postprocessing,dsets))
                         dsets = list(map(self._remove_vars,dsets))
                         try:
                             dsets = [xr.combine_by_coords([ds for ds in dsets if ds.experiment_id.values[0]==exp]
-                                    ,coords='minimal',data_vars='minimal',compat='override',combine_attrs='override') 
+                                    ,coords='minimal',data_vars='minimal',compat='override',combine_attrs='override')
                                     for exp in self.experiment_id]
                         except Exception as error:
                             dsets = [xr.combine_nested([ds for ds in dsets if ds.experiment_id.values[0]==exp],'member_id'
@@ -1889,7 +1985,8 @@ class CMIP6():
                             postprocess=self._postprocessing,
                             prefer_opendap=False,
                             combine_method='manual',
-                            esgf_url = self.esgf_url
+                            esgf_url = self.esgf_url,
+                            end_year=self.end_year
                         )
                         #dsets = list(map(self._postprocessing,dsets))
                         dsets = list(map(self._remove_vars,dsets))
