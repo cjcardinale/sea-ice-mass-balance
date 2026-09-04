@@ -556,12 +556,20 @@ def _plotly_sankey_fig(res_label, res_color, inflows, outflows,
         # node.y (domain space, increases downward) and this annotation's y (paper
         # space, increases upward) map to the same plot-area pixel range but run in
         # opposite directions, so tracking the node vertically is a straight flip.
-        annotations.append(
-            dict(x=node_x[out_group_idx], y=1 - node_y[out_group_idx], xref="paper", yref="paper",
-                 text=node_labels[out_group_idx], showarrow=False,
-                 xanchor="right", yanchor="middle", xshift=-8,
-                 font=dict(size=11, color="#333333"))
+        # This label is a plain go.Figure annotation rather than a native Sankey node
+        # label (like "Ocean Growth" still is), so it doesn't get Plotly's automatic
+        # text-legibility halo — stacked white copies underneath approximate the same
+        # faint outline rather than a solid background box.
+        _out_group_ann_kwargs = dict(
+            x=node_x[out_group_idx], y=1 - node_y[out_group_idx], xref="paper", yref="paper",
+            text=node_labels[out_group_idx], showarrow=False,
+            xanchor="right", yanchor="middle",
         )
+        for _dx, _dy in [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]:
+            annotations.append(dict(_out_group_ann_kwargs, xshift=-8 + _dx, yshift=_dy,
+                                     font=dict(size=11, color="white")))
+        annotations.append(dict(_out_group_ann_kwargs, xshift=-8,
+                                 font=dict(size=11, color="#333333")))
 
     fig.update_layout(
         title=dict(
