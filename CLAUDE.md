@@ -90,8 +90,8 @@ definitions, unit conversions, or corrections, change `load.py`/`functions.py`, 
 
 ## Models
 
-Nine models are used by default (up from the original six): ACCESS-CM2, HadGEM3-GC31-LL, UKESM1-0-LL,
-MRI-ESM2-0, CESM2-WACCM, NorESM2-LM, CNRM-CM6-1, CNRM-ESM2-1, IPSL-CM6A-LR. CESM2, NorESM2-MM, and
+Ten models are used by default (up from the original six): ACCESS-CM2, HadGEM3-GC31-LL, UKESM1-0-LL,
+MRI-ESM2-0, CESM2-WACCM, NorESM2-LM, CNRM-CM6-1, CNRM-ESM2-1, IPSL-CM6A-LR, EC-Earth3. CESM2, NorESM2-MM, and
 CNRM-CM6-1-HR have also been ingested but are excluded from the default set as resolution/model-family
 duplicates of CESM2-WACCM, NorESM2-LM, and CNRM-CM6-1 respectively. CESM2-LE is supported but off by
 default (`add_CESM2_LE=True` in `cmip6_sankey.ipynb` to include it) — with CESM2-WACCM already in

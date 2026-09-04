@@ -75,7 +75,7 @@ Corrections below standardize outputs to a common sign convention (losses negati
 | CIESM | — | CICE4 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | bottom | — |
 | CMCC-CM2-SR5 | — | CICE4.0 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | bottom | — |
 | CMCC-ESM2 | — | CICE4.0 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | bottom | — |
-| EC-Earth3 | — | LIM3 | ✓ | ✓ | — | ✓ | ✓ | ✓ | ✓ | ✓ | mid | `sidmasslat` not archived — this term is skipped (not saved/merged) rather than filled with a zero, so it's excluded from this model's own mean and doesn't dilute the multi-model mean (see [Known Issues](#known-issues-and-caveats)). `sidmassdyn` is listed in the catalog but unreachable — every monthly file 2015–2034 returned "file not found" from the resolved ESGF data node as of 2026-09-01, likely a stale/broken index on that replica rather than a real archival gap. Not yet ingested; retry once the node/replica issue clears. `sidmassth` (total thermodynamic mass tendency) isn't archived either — no candidate files found in any catalog search, unlike `sidmassdyn`'s node-availability issue. Not a real gap for the budget: `sidmassth` is only used as a diagnostic cross-check against the sum of the individual thermodynamic terms, not saved or included in `ice_budget_*`; `model_load.ipynb` skips that one comparison plot when it's missing. No corrections needed for `sidmassevapsubl` — already follows the CF sign convention (an earlier version of this pipeline incorrectly applied the ACCESS-CM2/HadGEM3/UKESM1 sign flip to it; fixed 2026-09-03). |
+| **EC-Earth3** | EC-Earth-Consortium | LIM3 | ✓ | ✓ | — | ✓ | ✓ | ✓ | ✓ | ✓ | mid | `sidmasslat` not archived — this term is skipped (not saved/merged) rather than filled with a zero, so it's excluded from this model's own mean and doesn't dilute the multi-model mean (see [Known Issues](#known-issues-and-caveats)). `sidmassdyn` is listed in the catalog but unreachable — every monthly file 2015–2034 returned "file not found" from the resolved ESGF data node as of 2026-09-01, likely a stale/broken index on that replica rather than a real archival gap; treated as missing for all regions rather than retried against a different node/replica for this round. `sidmassth` (total thermodynamic mass tendency) isn't archived either — no candidate files found in any catalog search, unlike `sidmassdyn`'s node-availability issue. Not a real gap for the budget: `sidmassth` is only used as a diagnostic cross-check against the sum of the individual thermodynamic terms, not saved or included in `ice_budget_*`; `model_load.ipynb` skips that one comparison plot when it's missing. No corrections needed for `sidmassevapsubl` — already follows the CF sign convention (an earlier version of this pipeline incorrectly applied the ACCESS-CM2/HadGEM3/UKESM1 sign flip to it; fixed 2026-09-03). |
 | EC-Earth3-CC | — | LIM3 | ✓ | ✓ | — | ✓ | ✓ | ✓ | ✓ | — | mid | — |
 | EC-Earth3-Veg | — | LIM3 | ✓ | ✓ | — | ✓ | ✓ | ✓ | ✓ | — | mid | — |
 | EC-Earth3-Veg-LR | — | LIM3 | ✓ | ✓ | — | ✓ | ✓ | ✓ | ✓ | — | bottom | — |
@@ -130,7 +130,7 @@ Same grouping, symbol key, and correction-standardization goal as the ice table 
 | CIESM | ✓ | ✓ | — | — | — | — | — |
 | CMCC-CM2-SR5 | ✓ | ✓ | — | ✓ | — | — | — |
 | CMCC-ESM2 | ✓ | ✓ | — | ✓ | — | — | — |
-| EC-Earth3 | ✓ | ✓ | ✓ | ✓ | — | ✓ | — |
+| **EC-Earth3** | ✓ | ✓ | ✓ | ✓ | — | ✓ | No corrections needed |
 | EC-Earth3-CC | ✓ | ✓ | — | — | — | — | — |
 | EC-Earth3-Veg | ✓ | ✓ | — | — | — | — | — |
 | EC-Earth3-Veg-LR | ✓ | ✓ | — | — | — | — | — |
@@ -151,7 +151,7 @@ Same grouping, symbol key, and correction-standardization goal as the ice table 
 ## Known Issues and Caveats
 
 - **Model results only.** These are not observationally constrained budgets.
-- **Nine models are used by default**, up from the original six. CESM2-LE is supported (50 members ingested, same CICE5.1.2 config as CESM2, ranked similarly plausible) but off by default and excluded from the paper — it's forced with SSP3-7.0 rather than the SSP2-4.5 used by every other model here, so including it by default would break scenario consistency across the multi-model mean, on top of over-weighting the CESM2 family. Set `add_CESM2_LE=True` in `cmip6_sankey.ipynb` to include it anyway.
+- **Ten models are used by default**, up from the original six. CESM2-LE is supported (50 members ingested, same CICE5.1.2 config as CESM2, ranked similarly plausible) but off by default and excluded from the paper — it's forced with SSP3-7.0 rather than the SSP2-4.5 used by every other model here, so including it by default would break scenario consistency across the multi-model mean, on top of over-weighting the CESM2 family. Set `add_CESM2_LE=True` in `cmip6_sankey.ipynb` to include it anyway.
 - **Snow budgets are more uncertain than ice budgets**, owing to inconsistent and incomplete snow flux output across models.
 - **Some corrections are diagnosed rather than confirmed** — the ACCESS-CM2 snowmelt fix, the CNRM basal-growth/top-melt split, and CESM2-WACCM's per-member rescaling are all inferred from the archived output rather than documented by the modeling centers. See each model's Notes in the [Models](#models) tables for what each one assumes and how confident it is.
 - **Non-zero wind drift and dynamics at hemispheric scale.** Summing over a full hemisphere should produce near-zero dynamics and wind drift, but small non-zero values remain — possibly a physical process (e.g. snow lost to the ocean via wind, or ice deformation at the ice edge) rather than a model artifact.
@@ -163,6 +163,12 @@ Same grouping, symbol key, and correction-standardization goal as the ice table 
 - **IPSL-CM6A-LR's and MRI-ESM2-0's `sidmassdyn` are excluded (all regions) as anomalous, not missing.** Unlike every other issue in this table, the data downloads fine and the variable is archived — the values themselves look wrong: hemispheric (SH/NH) dynamics should be a near-zero closed-domain residual, but IPSL's is ~1500 Gt/yr in the NH (consistent across all 11 members, never negative in any month), and MRI-ESM2-0's is even larger — ~2700 Gt/yr in the SH and ~720 Gt/yr in the NH, consistent across all 5 members and never changing sign. Verified against each model's raw `sidmassdyn` field computed on its own native grid (bypassing this pipeline's masking/area-weighting entirely) — the anomaly is in the archived data itself, not a processing bug here. Root cause unconfirmed for either model (real sea-ice-model behavior vs. an archiving quirk); dynamics is treated as missing for both models in `model_load.ipynb` (SH/NH/IA/Weddell all skipped, not saved) rather than plotted as-is.
 
 ## Updates
+
+**September 4, 2026**
+- Added EC-Earth3 (20 members) to the default model set, bringing it to ten models. Fixed the Models table row for EC-Earth3, which had been left showing the pre-ingestion "not yet ingested" status and non-default (unbolded) formatting after it was actually promoted to the default set.
+- Flagged MRI-ESM2-0's `sidmassdyn` as anomalous (large, sign-consistent hemispheric residual across all 5 members) and excluded it from all regions, same treatment as IPSL-CM6A-LR.
+- Fixed an incorrect sign flip previously applied to EC-Earth3's `sidmassevapsubl`.
+- Changed `sidmasslat` handling for IPSL-CM6A-LR/EC-Earth3 to skip the term entirely (not saved/merged) rather than filling with zero, so it doesn't dilute the multi-model mean.
 
 **September 1, 2026**
 - Added IPSL-CM6A-LR to the default model set.
