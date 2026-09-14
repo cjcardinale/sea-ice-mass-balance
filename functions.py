@@ -350,7 +350,8 @@ def _plotly_sankey_fig(res_label, res_color, inflows, outflows,
       terminal flow labels already carry their own custom text (e.g. the ±1 SD
       range in the uncertainty Sankeys) and shouldn't also get a plain % appended,
       but the group node — which has no such custom label — still should.
-    subtitle: optional string shown as a small annotation in the top-left corner.
+    subtitle: optional region name (e.g. "Arctic", "Antarctic"); the default title is
+      "{subtitle} ({model})".
     scale_bar_Gt: optional reference-flux value (Gt yr⁻¹), or a list of a few such
       values, drawn as a small vertical white bar (or a stack of bars, one column
       each) in a gutter added to the left margin — clear of the Sankey's own
@@ -590,8 +591,7 @@ def _plotly_sankey_fig(res_label, res_color, inflows, outflows,
         if n_members is not None and model_id != "MME":
             member_word = "member" if n_members == 1 else "members"
             model_id = f"{model_id}, {n_members} {member_word}"
-        prefix = f"{subtitle} " if subtitle else ""
-        title_text = f"{prefix}{budget_type} Budget ({model_id})"
+        title_text = f"{subtitle} ({model_id})" if subtitle else model_id
 
     annotations = [
         dict(x=0.47, y=sources_sinks_y, xref="paper", yref="paper", text="sources",
