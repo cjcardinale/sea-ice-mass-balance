@@ -1,0 +1,26 @@
+region,budget,model,side,term,flux_Gt_yr,sd_Gt_yr,pct_of_side_total,pct_lo,pct_hi,pct_of_scale_ref,reservoir_Gt_yr,scale_ref_Gt_yr
+SO,ice,MME,source,Snow-to-ice,5306.1,2064.02,26.48,16.18,36.78,24.79,20406.79,21401.5
+SO,ice,MME,source,Open water ice production,5899.93,2649.95,29.45,16.22,42.67,27.57,20406.79,21401.5
+SO,ice,MME,source,Basal growth,8830.93,2557.16,44.07,31.31,56.84,41.26,20406.79,21401.5
+SO,ice,MME,source,Residual,369.83,,,,,1.73,20406.79,21401.5
+SO,ice,MME,sink,Vapour Exchange,73.92,129.52,0.36,0.0,1.0,0.35,20406.79,21401.5
+SO,ice,MME,sink,Top melt,582.56,599.78,2.85,0.0,5.79,2.72,20406.79,21401.5
+SO,ice,MME,sink,Lateral melt,596.64,143.72,2.92,2.22,3.63,2.79,20406.79,21401.5
+SO,ice,MME,sink,Basal melt,19153.67,4921.22,93.86,69.74,117.97,89.5,20406.79,21401.5
+AO,ice,MME,source,Snow-to-ice,846.27,349.3,4.11,2.41,5.81,3.95,21386.24,21401.5
+AO,ice,MME,source,Open water ice production,4486.34,1785.52,21.78,13.11,30.45,20.96,21386.24,21401.5
+AO,ice,MME,source,Basal growth,15262.43,2153.46,74.11,63.65,84.56,71.31,21386.24,21401.5
+AO,ice,MME,source,Residual,791.2,,,,,3.7,21386.24,21401.5
+AO,ice,MME,sink,Vapour Exchange,107.15,106.41,0.5,0.0,1.0,0.5,21386.24,21401.5
+AO,ice,MME,sink,Top melt,5314.47,1549.78,24.85,17.6,32.1,24.83,21386.24,21401.5
+AO,ice,MME,sink,Lateral melt,857.83,183.83,4.01,3.15,4.87,4.01,21386.24,21401.5
+AO,ice,MME,sink,Basal melt,15106.81,1960.06,70.64,61.47,79.8,70.59,21386.24,21401.5
+IA,ice,MME,source,Snow-to-ice,201.43,176.6,1.51,0.19,2.84,0.94,13656.6,21401.5
+IA,ice,MME,source,Open water ice production,2677.91,970.92,20.14,12.84,27.44,12.51,13656.6,21401.5
+IA,ice,MME,source,Basal growth,10419.34,1396.38,78.35,67.85,88.85,48.69,13656.6,21401.5
+IA,ice,MME,source,Residual,357.92,,,,,1.67,13656.6,21401.5
+IA,ice,MME,sink,Vapour Exchange,70.01,65.26,0.51,0.03,0.99,0.33,13656.6,21401.5
+IA,ice,MME,sink,Top melt,3574.44,1117.83,26.17,17.99,34.36,16.7,13656.6,21401.5
+IA,ice,MME,sink,Lateral melt,463.89,92.25,3.4,2.72,4.07,2.17,13656.6,21401.5
+IA,ice,MME,sink,Basal melt,8127.36,721.54,59.51,54.23,64.8,37.98,13656.6,21401.5
+IA,ice,MME,sink,Dynamics,1420.9,268.82,10.4,8.44,12.37,6.64,13656.6,21401.5

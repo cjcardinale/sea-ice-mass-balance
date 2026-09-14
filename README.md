@@ -26,6 +26,50 @@ Each diagram shows a reservoir's sources (basal growth, frazil ice, snowfall, sn
 **Northern Hemisphere**
 ![NH Snow MME](figures/snow_sankey_AO_MME_2015-2034.png)
 
+### MME Budget Values (2015–2034)
+
+Multi-model mean annual fluxes (Gt yr⁻¹) and each term's share of total sources or sinks (the % shown on the figures; Residual excluded), for the Southern Ocean (SO), Arctic Ocean (AO), and Inner Arctic (IA). Hemispheric (SO/AO) ice dynamics is dropped as a near-zero closed-domain residual. From the latest run of [`cmip6_sankey.ipynb`](cmip6_sankey.ipynb), using the default model set (CESM2-LE included in the MME via `add_CESM2_LE=True`).
+
+Full tables for every model and the MME, including inter-member SD, ±1 SD % range, and % of the shared scale_ref, are written to `files/` at the end of each notebook:
+- [`files/ice_budget_terms_2015-2034.csv`](files/ice_budget_terms_2015-2034.csv) and [`files/snow_budget_terms_2015-2034.csv`](files/snow_budget_terms_2015-2034.csv) (all models + MME)
+- [`files/ice_budget_terms_MME_2015-2034.csv`](files/ice_budget_terms_MME_2015-2034.csv) and [`files/snow_budget_terms_MME_2015-2034.csv`](files/snow_budget_terms_MME_2015-2034.csv) (MME only)
+- [`files/ice_budget_terms_ERA5_2000-2024.csv`](files/ice_budget_terms_ERA5_2000-2024.csv) (from [`era5_sankey.ipynb`](era5_sankey.ipynb))
+
+**Sea ice**
+
+| | Term | SO Gt yr⁻¹ | SO % | AO Gt yr⁻¹ | AO % | IA Gt yr⁻¹ | IA % |
+|---|---|---:|---:|---:|---:|---:|---:|
+| Source | Basal growth | 8,831 | 44 | 15,262 | 74 | 10,419 | 78 |
+| Source | Open water ice production | 5,900 | 29 | 4,486 | 22 | 2,678 | 20 |
+| Source | Snow-to-ice | 5,306 | 26 | 846 | 4 | 201 | 2 |
+| Source | Residual | 370 | — | 791 | — | 358 | — |
+| Sink | Basal melt | 19,154 | 94 | 15,107 | 71 | 8,127 | 60 |
+| Sink | Top melt | 583 | 3 | 5,314 | 25 | 3,574 | 26 |
+| Sink | Lateral melt | 597 | 3 | 858 | 4 | 464 | 3 |
+| Sink | Vapour exchange | 74 | <1 | 107 | <1 | 70 | <1 |
+| Sink | Dynamics (export) | — | — | — | — | 1,421 | 10 |
+| | **Reservoir total** | **20,407** | | **21,386** | | **13,657** | |
+
+**Snow on sea ice**
+
+| | Term | SO Gt yr⁻¹ | SO % | AO Gt yr⁻¹ | AO % | IA Gt yr⁻¹ | IA % |
+|---|---|---:|---:|---:|---:|---:|---:|
+| Source | Snowfall | 4,192 | 100 | 2,011 | 100 | 1,220 | 100 |
+| Source | Residual | 628 | — | 185 | — | 90 | — |
+| Sink | Snow-to-ice | 2,224 | 46 | 331 | 15 | 81 | 6 |
+| Sink | Snowmelt | 1,439 | 30 | 1,214 | 55 | 797 | 61 |
+| Sink | Wind drift | 485 | 10 | 209 | 10 | 110 | 8 |
+| Sink | Vapour exchange | 443 | 9 | 237 | 11 | 145 | 11 |
+| Sink | Dynamics (export) | 229 | 5 | 206 | 9 | 178 | 14 |
+| | **Reservoir total** | **4,820** | | **2,196** | | **1,310** | |
+
+**Shared height scale (`scale_ref`)** used in the latest run. This is the (reservoir total, busiest-side flow count) of the larger hemispheric MME; every figure of that budget type is drawn at the same px-per-Gt scale:
+
+| Budget | `scale_ref` reservoir total | n_busiest | Reference figure | Scale bar |
+|---|---:|---:|---|---:|
+| Sea ice (`ICE_SANKEY_SCALE_REF`, also used by the ERA5 Sankeys) | 21,401.5 Gt yr⁻¹ | 5 | AO MME (balanced incl. dynamics) | 10,000 Gt yr⁻¹ |
+| Snow (`SNOW_SANKEY_SCALE_REF`) | 4,820.1 Gt yr⁻¹ | 5 | SO MME | 2,000 Gt yr⁻¹ |
+
 ## Workflow
 
 Two notebooks run in sequence, using [`load.py`](load.py) and [`functions.py`](functions.py) respectively:
@@ -42,7 +86,7 @@ Separately, **[`era5_sankey.ipynb`](era5_sankey.ipynb)** builds a comparison San
 
 Model roster and CMIP6 budget-variable availability, combining Table A1 from this repo's paper draft (`main.tex`) with the sea ice model component and plausibility ranking from our ICESat-2 constraint paper (Petty et al., 2025, *GMD*, [https://doi.org/10.5194/gmd-18-6313-2025](https://doi.org/10.5194/gmd-18-6313-2025), Fig. 9).
 
-Three groups, in both tables below (alphabetical within each): **bold** models are the current default subset (`SANKEY_MODELS` in [`cmip6_sankey.ipynb`](cmip6_sankey.ipynb)); CESM2, NorESM2-MM, CNRM-CM6-1-HR, and CESM2-LE have all been ingested via [`model_load.ipynb`](model_load.ipynb) but sit outside the default subset — CESM2/NorESM2-MM/CNRM-CM6-1-HR are resolution or model-family duplicates of a default model already included (CESM2-WACCM, NorESM2-LM, and CNRM-CM6-1 respectively), and CESM2-LE needs `add_CESM2_LE=True` to include it; the rest are the full CMIP6 archive as surfaced by the catalog search in [`model_load.ipynb`](model_load.ipynb), not yet ingested or analyzed.
+Three groups, in both tables below (alphabetical within each): **bold** models are the current default subset (`SANKEY_MODELS` in [`cmip6_sankey.ipynb`](cmip6_sankey.ipynb)); CESM2, NorESM2-MM, and CNRM-CM6-1-HR have been ingested via [`model_load.ipynb`](model_load.ipynb) but sit outside the default subset — they are resolution or model-family duplicates of a default model already included (CESM2-WACCM, NorESM2-LM, and CNRM-CM6-1 respectively). CESM2-LE is in the default subset (and the paper), toggled by `add_CESM2_LE=True`; the rest are the full CMIP6 archive as surfaced by the catalog search in [`model_load.ipynb`](model_load.ipynb), not yet ingested or analyzed.
 
 **Symbol key** (both tables): **✓** output found for at least one ensemble member; **—** not found in the catalog search (native grid, `SImon`, SSP2-4.5). For the ingested models, a `—` occasionally means something more specific — see each row's Notes and [Known Issues and Caveats](#known-issues-and-caveats).
 
@@ -66,7 +110,7 @@ Corrections below standardize outputs to a common sign convention (losses negati
 | CNRM-CM6-1-HR | CNRM-CERFACS | GELATO6.1 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | mid | Resolution sibling of CNRM-CM6-1, excluded from the default set for that reason. Same basal-growth/top-melt reconstruction |
 | NorESM2-MM | NCC | CICE5.1.2 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | mid | Resolution sibling of NorESM2-LM, excluded from the default set for that reason. Same melt-sign fix |
 | **IPSL-CM6A-LR** | IPSL | LIM3 | ✓ | ✓ | — | ✓ | ✓ | ✓ | ✓ | ✓ | mid | `sidmasslat` not archived — this term is skipped (not saved/merged) rather than filled with a zero, so it's excluded from this model's own mean and doesn't dilute the multi-model mean (see [Known Issues](#known-issues-and-caveats)). `sidmassdyn` is anomalous — hemispheric (SH/NH) dynamics should be a near-zero closed-domain residual (all other models are within a few hundred Gt/yr), but IPSL's NH residual is ~1500 Gt/yr, consistent across all 11 members and never negative in any month. Confirmed present in the raw field itself (recomputed directly from its native grid/area, bypassing this pipeline's masking) — not a processing bug here, root cause unconfirmed. Dynamics treated as missing for all regions (see [Known Issues](#known-issues-and-caveats)). |
-| CESM2-LE | NCAR | CICE5.1.2 (same as CESM2) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | top ‡ | Same melt-sign fix as CESM2/NorESM2. **Optional, off by default** — forced with SSP3-7.0 rather than SSP2-4.5 like every other model here, so it's kept out of the default subset (and the paper) to keep the scenario consistent across the multi-model mean; set `add_CESM2_LE=True` to include it anyway |
+| **CESM2-LE** | NCAR | CICE5.1.2 (same as CESM2) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | top ‡ | Same melt-sign fix as CESM2/NorESM2. Included in the default set and the paper via `add_CESM2_LE=True` (set `False` to drop it). Forced with SSP3-7.0 rather than the SSP2-4.5 used by every other model here — see [Known Issues](#known-issues-and-caveats) |
 | ACCESS-ESM1-5 | — | CICE4.1 | — | — | — | — | — | — | ✓ | — | top | — |
 | AWI-CM-1-1-MR | — | FESOM1.4 | — | — | — | — | — | ✓ | ✓ | — | top | — |
 | BCC-CSM2-MR | — | SIS2 | ✓ | ✓ | — | — | ✓ | ✓ | ✓ | — | bottom | — |
@@ -93,7 +137,7 @@ Corrections below standardize outputs to a common sign convention (losses negati
 
 **Period:** 2015–2034 (20-year climatological mean across all available ensemble members).
 
-**Institution** and per-model **Notes** are populated for every ingested model — bold (default-subset) models, CESM2-LE, and non-default ingested models like CESM2, NorESM2-MM, and CNRM-CM6-1-HR; no correction assessment has been made yet for the not-yet-ingested models at the bottom.
+**Institution** and per-model **Notes** are populated for every ingested model — bold (default-subset) models and non-default ingested models like CESM2, NorESM2-MM, and CNRM-CM6-1-HR; no correction assessment has been made yet for the not-yet-ingested models at the bottom.
 
 † Approximate plausibility tier ("top"/"mid"/"bottom" third) from the model's row position in Figure 9 of the paper cited above, which ranks CMIP6 models by mean plausibility index (φ, lower = more plausible) averaged across 15 area/freeboard/thickness metrics.
 
@@ -152,7 +196,7 @@ Same grouping, symbol key, and correction-standardization goal as the ice table 
 
 - **Model results only.** These are not observationally constrained budgets.
 - **CESM2, NorESM2-MM, and CNRM-CM6-1-HR were ingested but are excluded from the default set** because each is a resolution/family duplicate of a default model already covering that model family (CESM2-WACCM, NorESM2-LM, and CNRM-CM6-1 respectively) — including both would over-weight that family in the multi-model mean without adding independent information. They're unbolded, non-default rows in the [Models](#models) tables above (not "not yet analyzed" like the fully un-ingested models below them).
-- CESM2-LE is supported (50 members ingested, same CICE5.1.2 config as CESM2, ranked similarly plausible) but off by default and excluded from the paper — it's forced with SSP3-7.0 rather than the SSP2-4.5 used by every other model here, so including it by default would break scenario consistency across the multi-model mean, on top of over-weighting the CESM2 family. Set `add_CESM2_LE=True` in `cmip6_sankey.ipynb` to include it anyway.
+- **CESM2-LE is included in the default set and the paper** (50 members, same CICE5.1.2 config as CESM2, ranked similarly plausible), alongside CESM2-WACCM; the CMIP6 CESM2 contribution is not. Caveat: CESM2-LE is forced with SSP3-7.0 rather than the SSP2-4.5 used by every other model here — scenario differences are expected to be small over 2015–2034 but aren't zero. Set `add_CESM2_LE=False` in `cmip6_sankey.ipynb` to drop it.
 - **Snow budgets are more uncertain than ice budgets**, owing to inconsistent and incomplete snow flux output across models.
 - **Some corrections are diagnosed rather than confirmed** — the ACCESS-CM2 snowmelt fix, the CNRM basal-growth/top-melt split, and CESM2-WACCM's per-member rescaling are all inferred from the archived output rather than documented by the modeling centers. See each model's Notes in the [Models](#models) tables for what each one assumes and how confident it is.
 - **Non-zero wind drift and dynamics at hemispheric scale.** Summing over a full hemisphere should produce near-zero dynamics and wind drift, but small non-zero values remain — possibly a physical process (e.g. snow lost to the ocean via wind, or ice deformation at the ice edge) rather than a model artifact.
@@ -160,9 +204,14 @@ Same grouping, symbol key, and correction-standardization goal as the ice table 
 - **Wind drift** is only available from the NorESM2 models.
 - **Snow-side dynamics** is only available from HadGEM3-GC31-LL and UKESM1-0-LL.
 - **ESGF data-node flakiness is a distinct failure mode from a genuine archival gap.** A variable can be listed as available in the catalog search yet fail to download because the specific ESGF replica the search resolved to has a stale or broken file index — e.g. EC-Earth3's `sidmassdyn` (see its row above), where every 2015–2034 monthly file returns "file not found" despite being cataloged. Don't assume a load failure means the model doesn't archive the variable; check whether it's a `None`/missing-data message (genuine gap) or a download/"file not found" error (node issue, worth retrying later or from a different replica).
-- **IPSL-CM6A-LR's and MRI-ESM2-0's `sidmassdyn` are excluded (all regions) as anomalous, not missing.** The data downloads fine and the variable is archived, but the values look wrong: hemispheric (SH/NH) dynamics should be a near-zero closed-domain residual, but IPSL's is ~1500 Gt/yr in the NH (all 11 members, never negative), and MRI-ESM2-0's is larger still — ~2700 Gt/yr in the SH, ~720 Gt/yr in the NH (all 5 members, never changing sign). Verified against each model's raw field on its own native grid, bypassing this pipeline's masking — the anomaly is in the archived data itself. Root cause unconfirmed for either model; dynamics is treated as missing for both in [`model_load.ipynb`](model_load.ipynb) rather than plotted as-is.
+- **IPSL-CM6A-LR's and MRI-ESM2-0's `sidmassdyn` are excluded (all regions) as anomalous, not missing.** The data downloads fine and the variable is archived, but the values look wrong: hemispheric (SH/NH) dynamics should be a near-zero closed-domain residual, but IPSL's is ~1500 Gt/yr in the NH (all 11 members, never negative), and MRI-ESM2-0's is larger still — ~2700 Gt/yr in the SH, ~720 Gt/yr in the NH (all 5 members, never changing sign). Verified against each model's raw field on its own native grid, bypassing this pipeline's masking — the anomaly is in the archived data itself. Dynamics is treated as missing for both in [`model_load.ipynb`](model_load.ipynb) rather than plotted as-is. For IPSL-CM6A-LR the residual looks like LIM3/SI3 porous ridging rather than a data error: ridging entrains seawater into the ridge keel, a genuine ice–ocean mass source that has no reason to sum to zero over a closed domain, and `sidmassth` carries a compensating sink of almost exactly the same size, so the total budget still closes (−200 Gt/yr globally). The [ERA5 NEMO-SI3 run](era5_sankey.ipynb) archives the two separately — transport (`icemtrp`, −14 Gt/yr Arctic) and ridging (`vfxdyn`, +1380 Gt/yr Arctic, against IPSL's +1434) — but CMIP6's `sidmassdyn` merges them into one variable, so the term is excluded. Consistent with the CICE-based models (ACCESS-CM2, HadGEM3-GC31-LL, UKESM1-0-LL, CESM2, NorESM2), which don't entrain seawater when ridging and whose `sidmassdyn` closes to ~0. Two caveats on the diagnosis: CMIP6 archives no separate transport *tendency* (only the `sidmasstranx`/`sidmasstrany` flux components, which would have to be differenced to recover one), and the compensating melt cannot be attributed to a specific term from the archived integrals — `sidmassmeltbot` is the likeliest home, since IPSL archives no `sidmasslat` yet its terms still sum to `sidmassth`.
 
 ## Updates
+
+**September 14, 2026**
+- `cmip6_sankey.ipynb` and `era5_sankey.ipynb` now finish by writing CSV tables of every Sankey's budget terms to `files/`: absolute fluxes (Gt yr⁻¹, with inter-member SD), % of total sources/sinks, and % of the shared `scale_ref`. Built by the new `budget_table`/`ice_budget_table`/`snow_budget_table` helpers in `functions.py`.
+- Added MME budget values and the latest `scale_ref` values to this README (see [MME Budget Values](#mme-budget-values-20152034)).
+- Corrected the docs to match the paper draft: CESM2-LE is part of the default model set (with CESM2-WACCM; not the CMIP6 CESM2 contribution or the other resolution siblings).
 
 **September 4, 2026**
 - Added EC-Earth3 (20 members) to the default model set.

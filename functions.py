@@ -132,6 +132,14 @@ def _fmt(v_Gt):
     v = abs(v_Gt)
     return f"{v/1e3:.1f}×10³" if v >= 500 else f"{v:.0f}"
 
+def _round_sig1(x):
+    """Round a positive value to 1 significant figure (e.g. 383,750 -> 400,000)."""
+    if x <= 0:
+        return 0.0
+    exp = np.floor(np.log10(x))
+    base = 10 ** exp
+    return float(round(x / base) * base)
+
 
 # ── Budget QC: automated sanity checks ─────────────────────────────────────────
 #
@@ -318,7 +326,8 @@ def _plotly_sankey_fig(res_label, res_color, inflows, outflows,
                        inflow_group=None, outflow_group=None, scale_ref=None,
                        show_values=True, show_residual=True, subtitle=None,
                        hide_terminal_nodes=False, show_percent=False, show_group_percent=None,
-                       sources_sinks_y=1.0, res_label_y=0.12, n_members=None):
+                       sources_sinks_y=1.0, res_label_y=0.12, n_members=None,
+                       scale_bar_Gt=None, width=950):
     """
     Build a Plotly Sankey figure for a mass budget.
 
@@ -335,12 +344,31 @@ def _plotly_sankey_fig(res_label, res_color, inflows, outflows,
     show_residual: if False, strip the Residual balancing node from the diagram.
     show_percent: if True, add each terminal node's share of its side's total
       (inflows as % of total sources, outflows as % of total sinks) in parentheses.
+      The Residual node is excluded from those totals and gets no %.
     show_group_percent: same, but for the combined Ocean Growth/Ocean Melt group
       node specifically. Defaults to show_percent — pass it explicitly when the
       terminal flow labels already carry their own custom text (e.g. the ±1 SD
       range in the uncertainty Sankeys) and shouldn't also get a plain % appended,
       but the group node — which has no such custom label — still should.
-    subtitle: optional string shown as a small annotation in the top-left corner.
+    subtitle: optional region name (e.g. "Arctic", "Antarctic"); the default title is
+      "{subtitle} ({model})".
+    scale_bar_Gt: optional reference-flux value (Gt yr⁻¹), or a list of a few such
+      values, drawn as a small vertical white bar (or a stack of bars, one column
+      each) in a gutter added to the left margin — clear of the Sankey's own
+      leftmost column of ribbons/labels — vertically centered on the plot, with
+      its value label rotated vertical to its left, sized in the same
+      px-per-Gt-yr⁻¹ scale as the flow ribbons: a ruler for reading absolute
+      magnitudes off ribbon widths by eye. Pass 'auto' to pick the bar value
+      automatically: the scale_ref total (or,
+      if scale_ref isn't given, this figure's own reservoir total) rounded to 1
+      significant figure via _round_sig1, e.g. a 383,750 Gt yr⁻¹ scale_ref ->
+      a 400,000 Gt yr⁻¹ bar. When scale_ref is also given, that px-per-Gt scale
+      (and 'auto's rounded value) is shared across every figure using the same
+      scale_ref, so one bar is directly comparable across a whole set of figures;
+      without scale_ref the bar is still to scale within this one figure.
+      Prototype: no effort yet to keep the bar within the bottom margin when its
+      value is large relative to scale_ref, or to avoid
+      overlap between stacked rows and other bottom-margin annotations.
     """
     import plotly.graph_objects as go
     if show_group_percent is None:
@@ -353,15 +381,17 @@ def _plotly_sankey_fig(res_label, res_color, inflows, outflows,
     n_in  = len(inflows)
     n_out = len(outflows)
 
-    total_in  = sum(v for v, *_ in inflows)  or 1.0
-    total_out = sum(v for v, *_ in outflows) or 1.0
+    # % shares exclude the Residual (a closure error, not a physical term), matching
+    # the uncertainty Sankeys, which compute their % labels before balancing.
+    total_in  = sum(v for v, lb, _ in inflows  if lb != "Residual") or 1.0
+    total_out = sum(v for v, lb, _ in outflows if lb != "Residual") or 1.0
 
     def _node_label(lb, v, total=None, want_percent=None):
         want_percent = show_percent if want_percent is None else want_percent
         parts = []
         if show_values:
             parts.append(f"{_fmt(v)} Gt yr⁻¹")
-        if want_percent and total is not None:
+        if want_percent and total is not None and lb != "Residual":
             parts.append(f"{100 * v / total:.0f}%")
         if not parts:
             return lb
@@ -515,20 +545,44 @@ def _plotly_sankey_fig(res_label, res_color, inflows, outflows,
 
     n_busiest = max(n_in, n_out)
     fig_id = f"{budget_type} ({model_label}{', ' + subtitle if subtitle else ''})"
+    reservoir_total = sum(v for v, *_ in inflows)
+    gaps_this = NODE_PAD * max(0, n_busiest - 1)
     if scale_ref is not None and scale_ref[0] > 0:
         ref_total, ref_n_busiest = scale_ref
-        reservoir_total = sum(v for v, *_ in inflows)
-        gaps_this = NODE_PAD * max(0, n_busiest - 1)
         gaps_ref  = NODE_PAD * max(0, ref_n_busiest - 1)
-        available = (PLOT_AREA_FULL - gaps_ref) * (reservoir_total / ref_total)
+        # px per Gt yr⁻¹ of reservoir flux — constant across every figure sharing
+        # this scale_ref, since gaps_ref/ref_total don't depend on this figure's
+        # own reservoir_total. Used both to size this figure's plot_area and (if
+        # scale_bar_Gt is given) to size the reference bar to the same scale.
+        px_per_Gt = (PLOT_AREA_FULL - gaps_ref) / ref_total
+        available = px_per_Gt * reservoir_total
         plot_area = max(50, gaps_this + available)
         print(f"[normalization] {fig_id}: reservoir={reservoir_total:,.1f} Gt yr⁻¹ / "
               f"scale_ref={ref_total:,.1f} Gt yr⁻¹ -> scale factor={reservoir_total / ref_total:.3f}, "
               f"plot_area={plot_area:.0f}px")
     else:
         plot_area = PLOT_AREA_FULL
+        # No cross-figure scale_ref: fall back to this figure's own px-per-Gt so
+        # a scale_bar_Gt is still meaningful within this one figure.
+        px_per_Gt = (PLOT_AREA_FULL - gaps_this) / reservoir_total if reservoir_total > 0 else None
         print(f"[normalization] {fig_id}: no scale_ref given, using full plot area ({plot_area}px)")
     height = MARGIN_T + MARGIN_B + plot_area
+
+    # Reference-flux scale bar: a small horizontal bar (or a stack of a few, one
+    # per scale_bar_Gt value) centered under the reservoir node, in the bottom
+    # margin, drawn at the same px-per-Gt scale as the ribbons — a visual ruler
+    # for absolute magnitude.
+    if scale_bar_Gt == 'auto':
+        auto_basis = scale_ref[0] if (scale_ref is not None and scale_ref[0] > 0) else reservoir_total
+        scale_bar_Gt = [_round_sig1(auto_basis)] if auto_basis > 0 else None
+    have_scale_bar = scale_bar_Gt is not None and px_per_Gt is not None
+    # A gutter added to the left margin holds the bar clear of the Sankey itself
+    # (ribbons + terminal-node labels pack the plot's own left edge).
+    GUTTER_W = 25
+    BAR_INSET = 7  # px from the plot area's left edge to the bar's centre
+    fig_width = width + (GUTTER_W if have_scale_bar else 0)
+    margin_l = 20 + (GUTTER_W if have_scale_bar else 0)
+    margin_r = 20
 
     if title is not None:
         title_text = title
@@ -537,14 +591,9 @@ def _plotly_sankey_fig(res_label, res_color, inflows, outflows,
         if n_members is not None and model_id != "MME":
             member_word = "member" if n_members == 1 else "members"
             model_id = f"{model_id}, {n_members} {member_word}"
-        prefix = f"{subtitle} " if subtitle else ""
-        title_text = f"{prefix}{budget_type} Budget ({model_id})"
+        title_text = f"{subtitle} ({model_id})" if subtitle else model_id
 
     annotations = [
-        dict(x=node_x[res_idx], y=res_label_y, xref="paper", yref="paper",
-             text=res_label, showarrow=False,
-             xanchor="center", yanchor="top",
-             font=dict(size=11, color="#333333")),
         dict(x=0.47, y=sources_sinks_y, xref="paper", yref="paper", text="sources",
              showarrow=False, xanchor="right",
              font=dict(size=11, color="#888888")),
@@ -552,6 +601,11 @@ def _plotly_sankey_fig(res_label, res_color, inflows, outflows,
              showarrow=False, xanchor="left",
              font=dict(size=11, color="#888888")),
     ]
+    annotations.append(
+        dict(x=node_x[res_idx], y=res_label_y, xref="paper", yref="paper",
+             text=res_label, showarrow=False,
+             xanchor="center", yanchor="top",
+             font=dict(size=11, color="#888888")))
     if out_group_idx is not None:
         # node.y (domain space, increases downward) and this annotation's y (paper
         # space, increases upward) map to the same plot-area pixel range but run in
@@ -571,6 +625,39 @@ def _plotly_sankey_fig(res_label, res_color, inflows, outflows,
         annotations.append(dict(_out_group_ann_kwargs, xshift=-8,
                                  font=dict(size=11, color="#333333")))
 
+    shapes = []
+    if have_scale_bar:
+        # "paper" x/y for this figure are normalized to the Sankey trace's own
+        # domain (the plot area inside the margins): x=0/y=1 are that area's
+        # left/top edge, and 1 paper unit == the domain's own pixel width/height
+        # (plot_width_px / plot_area respectively) — not the full canvas. x<0
+        # drops left of the domain's left edge, into the gutter added to margin_l.
+        plot_width_px = fig_width - margin_l - margin_r
+        bar_values = scale_bar_Gt if isinstance(scale_bar_Gt, (list, tuple)) else [scale_bar_Gt]
+        bar_half_w_paper = (NODE_THICKNESS / 2) / plot_width_px
+        col_pitch_paper = 40 / plot_width_px  # horizontal spacing between stacked bar columns
+        label_gap_paper = 8 / plot_width_px
+        # Sits in the gutter to the left of the Sankey's own leftmost (x=0)
+        # column, clear of its terminal-node labels/ribbons; vertically centered
+        # on the plot. Pushed to the right-hand side of the gutter (rather than
+        # centred in it) so the bar + its rotated label sit close to the Sankey,
+        # with the extra room spent on the gap between bar and label instead.
+        x_base = -(1 + BAR_INSET) / plot_width_px
+        y_center = 0.5
+        for i, gt_val in enumerate(bar_values):
+            bar_len_paper = (gt_val * px_per_Gt) / plot_area
+            x_center = x_base - col_pitch_paper * i  # stack further left if more than one
+            y0, y1 = y_center - bar_len_paper / 2, y_center + bar_len_paper / 2
+            shapes.append(dict(type="rect", xref="paper", yref="paper",
+                                x0=x_center - bar_half_w_paper, x1=x_center + bar_half_w_paper,
+                                y0=y0, y1=y1,
+                                fillcolor="white", line=dict(color="#333333", width=1)))
+            annotations.append(dict(x=x_center - bar_half_w_paper - label_gap_paper, y=(y0 + y1) / 2,
+                                     xref="paper", yref="paper",
+                                     text=f"{gt_val:,.0f} Gt yr⁻¹", showarrow=False,
+                                     xanchor="center", yanchor="middle", textangle=-90,
+                                     font=dict(size=9, color="#333333")))
+
     fig.update_layout(
         title=dict(
             text=f"<b>{title_text}</b>",
@@ -578,9 +665,10 @@ def _plotly_sankey_fig(res_label, res_color, inflows, outflows,
         ),
         font=dict(size=11, color="#333333", family="Arial, sans-serif"),
         height=height,
-        width=950,
+        width=fig_width,
         paper_bgcolor="white",
-        margin=dict(l=20, r=20, t=60, b=120),
+        shapes=shapes,
+        margin=dict(l=margin_l, r=margin_r, t=60, b=120),
         annotations=annotations,
     )
     return fig
@@ -625,7 +713,7 @@ def _ice_reservoir_total(ice_budget, model=None):
 def make_ice_sankey_plotly(ice_budget, model=None, res_label=None, title=None,
                            inflow_group_name=None, outflow_group_name=None, scale_ref=None,
                            show_values=True, show_residual=True, subtitle=None, res_color=None,
-                           hide_terminal_nodes=False, show_percent=False):
+                           hide_terminal_nodes=False, show_percent=False, scale_bar_Gt=None):
     """Ice mass budget as an interactive Plotly Sankey."""
     import plotly.graph_objects as go
     s = lambda da: _sel(da, model)
@@ -642,7 +730,7 @@ def make_ice_sankey_plotly(ice_budget, model=None, res_label=None, title=None,
                               inflow_group=inflow_group, outflow_group=outflow_group, scale_ref=scale_ref,
                               show_values=show_values, show_residual=show_residual, subtitle=subtitle,
                               hide_terminal_nodes=hide_terminal_nodes, show_percent=show_percent,
-                              n_members=n_members)
+                              n_members=n_members, scale_bar_Gt=scale_bar_Gt)
 
 
 # ── Sankey: uncertainty (inter-ensemble-member spread) ─────────────────────────
@@ -763,7 +851,8 @@ def make_ice_sankey_uncertainty_plotly(ice_budget, model=None, res_label="Sea Ic
                                        inflow_group_name=None, outflow_group_name=None,
                                        scale_ref=None, show_residual=True, width=1100,
                                        include_dynamics=True,
-                                       shade_uncertainty=False, max_rel_spread=0.6):
+                                       shade_uncertainty=False, max_rel_spread=0.6,
+                                       scale_bar_Gt=None):
     """Ice mass budget Sankey with its node labels showing the ±1 SD range of each
     flow's % contribution to the budget (see _ice_sankey_uncertainty_flows). Rendered
     via _plotly_sankey_fig with hide_terminal_nodes=True, so it matches
@@ -773,6 +862,8 @@ def make_ice_sankey_uncertainty_plotly(ice_budget, model=None, res_label="Sea Ic
 
     include_dynamics: see _ice_sankey_uncertainty_flows — pass False for full
     hemisphere (SH/NH) budgets, True for the Inner Arctic (IA).
+    scale_bar_Gt: see _plotly_sankey_fig — reference-flux ruler bar, drawn at the
+    same px-per-Gt scale as the ribbons.
     shade_uncertainty / max_rel_spread: set shade_uncertainty=True to also fade each
     flow's ribbon color toward white by relative spread (off by default — this reads
     as harder to parse at a glance than the label's ±1 SD range alone).
@@ -790,8 +881,8 @@ def make_ice_sankey_uncertainty_plotly(ice_budget, model=None, res_label="Sea Ic
                              inflow_group=inflow_group, outflow_group=outflow_group, scale_ref=scale_ref,
                              show_values=False, show_residual=show_residual,
                              subtitle=subtitle, hide_terminal_nodes=True,
-                             show_percent=False, show_group_percent=True, n_members=n_members)
-    fig.update_layout(width=width)
+                             show_percent=False, show_group_percent=True, n_members=n_members,
+                             scale_bar_Gt=scale_bar_Gt, width=width)
     return fig
 
 
@@ -832,7 +923,7 @@ def _snow_reservoir_total(snow_budget, model=None):
 
 def make_snow_sankey_plotly(snow_budget, model=None, res_label=None, title=None, scale_ref=None,
                             show_values=True, show_residual=True, subtitle=None, res_color=None,
-                            hide_terminal_nodes=False, show_percent=False):
+                            hide_terminal_nodes=False, show_percent=False, scale_bar_Gt=None):
     """Snow mass budget as an interactive Plotly Sankey."""
     import plotly.graph_objects as go
     s = lambda da: _sel(da, model)
@@ -847,7 +938,8 @@ def make_snow_sankey_plotly(snow_budget, model=None, res_label=None, title=None,
                               scale_ref=scale_ref, show_values=show_values,
                               show_residual=show_residual, subtitle=subtitle,
                               hide_terminal_nodes=hide_terminal_nodes, show_percent=show_percent,
-                              sources_sinks_y=1.03, res_label_y=0.06, n_members=n_members)
+                              sources_sinks_y=1.03, res_label_y=0.06, n_members=n_members,
+                              scale_bar_Gt=scale_bar_Gt)
 
 
 # ── Sankey: snow uncertainty (inter-ensemble-member spread) ────────────────────
@@ -917,13 +1009,15 @@ def _snow_sankey_uncertainty_flows(snow_budget, model=None, shade_uncertainty=Fa
 def make_snow_sankey_uncertainty_plotly(snow_budget, model=None, res_label="Snow",
                                         res_color=None, title=None, subtitle=None,
                                         scale_ref=None, show_residual=True, width=1100,
-                                        shade_uncertainty=False, max_rel_spread=0.6):
+                                        shade_uncertainty=False, max_rel_spread=0.6,
+                                        scale_bar_Gt=None):
     """Snow mass budget Sankey with its node labels showing the ±1 SD range of each
     flow's % contribution to the budget (see _snow_sankey_uncertainty_flows). Rendered
     via _plotly_sankey_fig to match make_snow_sankey_plotly's styling — only the flow
     labels differ.
 
-    shade_uncertainty / max_rel_spread: see make_ice_sankey_uncertainty_plotly."""
+    shade_uncertainty / max_rel_spread: see make_ice_sankey_uncertainty_plotly.
+    scale_bar_Gt: see _plotly_sankey_fig."""
     inflows, outflows = _snow_sankey_uncertainty_flows(snow_budget, model=model,
                                                         shade_uncertainty=shade_uncertainty,
                                                         max_rel_spread=max_rel_spread)
@@ -933,9 +1027,71 @@ def make_snow_sankey_uncertainty_plotly(snow_budget, model=None, res_label="Snow
                              label, "Snow on Sea Ice Mass", title=title,
                              scale_ref=scale_ref, show_values=False, show_residual=show_residual,
                              subtitle=subtitle, hide_terminal_nodes=True, show_percent=False,
-                             sources_sinks_y=1.03, res_label_y=0.06, n_members=n_members)
-    fig.update_layout(width=width)
+                             sources_sinks_y=1.03, res_label_y=0.06, n_members=n_members,
+                             scale_bar_Gt=scale_bar_Gt, width=width)
     return fig
+
+
+# ── Budget tables (CSV export of the Sankey numbers) ───────────────────────────
+
+def budget_table(inflows, outflows, region, budget_type, model_label, scale_ref=None):
+    """One row per Sankey flow — the numbers behind a single figure — as a DataFrame.
+
+    inflows / outflows: (value_Gt, label, color[, sd_Gt]) tuples, as produced by
+      _ice_flows_uncertainty / _snow_flows_uncertainty (with sd) or built by hand
+      (e.g. era5_sankey.ipynb, no sd). Zero flows are dropped, as in the figures.
+    Columns:
+      flux_Gt_yr / sd_Gt_yr: annual flux and inter-member SD (NaN if not given).
+      pct_of_side_total: share of total sources (or sinks), the % shown on the
+        figure; pct_lo/pct_hi are the ±1 SD range shown by the uncertainty Sankeys.
+      pct_of_scale_ref: flux as % of the shared scale_ref reservoir total, i.e. the
+        ribbon width relative to the reference figure (comparable across figures).
+      reservoir_Gt_yr: this figure's balanced reservoir throughput.
+    A "Residual" row balances the smaller side. Like on the figures, it's excluded
+    from the % totals and gets no pct_of_side_total.
+    """
+    def _norm(t):
+        return t[0], t[1], (t[3] if len(t) > 3 else np.nan)
+    ins  = [_norm(t) for t in inflows  if t[0] > 0]
+    outs = [_norm(t) for t in outflows if t[0] > 0]
+    imbalance = sum(v for v, *_ in ins) - sum(v for v, *_ in outs)
+    residual = (abs(imbalance), "Residual", np.nan)
+    ins_bal  = ins  + ([residual] if imbalance < 0 else [])
+    outs_bal = outs + ([residual] if imbalance > 0 else [])
+    reservoir = sum(v for v, *_ in ins_bal)
+    ref = scale_ref[0] if scale_ref is not None and scale_ref[0] > 0 else np.nan
+
+    rows = []
+    for side, terms, bal in (("source", ins, ins_bal), ("sink", outs, outs_bal)):
+        total = sum(v for v, *_ in terms)
+        for v, lb, sd in bal:
+            pct = 100 * v / total if (total > 0 and lb != "Residual") else np.nan
+            has_range = not (np.isnan(pct) or np.isnan(sd))
+            rows.append({
+                "region": region, "budget": budget_type, "model": model_label, "side": side,
+                "term": lb, "flux_Gt_yr": v, "sd_Gt_yr": sd,
+                "pct_of_side_total": pct,
+                "pct_lo": 100 * max(0.0, v - sd) / total if has_range else np.nan,
+                "pct_hi": 100 * (v + sd) / total if has_range else np.nan,
+                "pct_of_scale_ref": 100 * v / ref,
+                "reservoir_Gt_yr": reservoir, "scale_ref_Gt_yr": ref,
+            })
+    return pd.DataFrame(rows)
+
+def ice_budget_table(ice_budget, model=None, region="", include_dynamics=True, scale_ref=None):
+    """budget_table for one ice Sankey, using the same flows/filters as
+    make_ice_sankey_uncertainty_plotly (include_dynamics: False for SO/AO, True for IA)."""
+    inflows, outflows = _ice_flows_uncertainty(ice_budget, model)
+    if not include_dynamics:
+        inflows  = [t for t in inflows  if t[1] != "Dynamics"]
+        outflows = [t for t in outflows if t[1] != "Dynamics"]
+    return budget_table(inflows, outflows, region, "ice", model or "MME", scale_ref)
+
+def snow_budget_table(snow_budget, model=None, region="", scale_ref=None):
+    """budget_table for one snow Sankey, using the same flows as
+    make_snow_sankey_uncertainty_plotly."""
+    inflows, outflows = _snow_flows_uncertainty(snow_budget, model)
+    return budget_table(inflows, outflows, region, "snow", model or "MME", scale_ref)
 
 
 # ––––– Spatial Masking –––––––––––––––––
