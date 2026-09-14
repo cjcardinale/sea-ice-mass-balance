@@ -1,0 +1,19 @@
+region,budget,model,side,term,flux_Gt_yr,sd_Gt_yr,pct_of_side_total,pct_lo,pct_hi,pct_of_scale_ref,reservoir_Gt_yr,scale_ref_Gt_yr
+AO,ice,ERA5,source,Snow-to-ice,845.16,,3.4,,,3.95,25168.43,21401.5
+AO,ice,ERA5,source,Open water ice production,3986.59,,16.05,,,18.63,25168.43,21401.5
+AO,ice,ERA5,source,Basal growth,18621.64,,74.99,,,87.01,25168.43,21401.5
+AO,ice,ERA5,source,Porous ridging,1380.26,,5.56,,,6.45,25168.43,21401.5
+AO,ice,ERA5,source,Residual,334.78,,,,,1.56,25168.43,21401.5
+AO,ice,ERA5,sink,Vapour Exchange,62.17,,0.25,,,0.29,25168.43,21401.5
+AO,ice,ERA5,sink,Top melt,6153.44,,24.45,,,28.75,25168.43,21401.5
+AO,ice,ERA5,sink,Lateral melt,3244.63,,12.89,,,15.16,25168.43,21401.5
+AO,ice,ERA5,sink,Basal melt,15708.19,,62.41,,,73.4,25168.43,21401.5
+SO,ice,ERA5,source,Snow-to-ice,8412.23,,32.0,,,39.31,26586.05,21401.5
+SO,ice,ERA5,source,Open water ice production,4756.35,,18.09,,,22.22,26586.05,21401.5
+SO,ice,ERA5,source,Basal growth,12428.13,,47.27,,,58.07,26586.05,21401.5
+SO,ice,ERA5,source,Porous ridging,694.3,,2.64,,,3.24,26586.05,21401.5
+SO,ice,ERA5,source,Residual,295.03,,,,,1.38,26586.05,21401.5
+SO,ice,ERA5,sink,Vapour Exchange,41.49,,0.16,,,0.19,26586.05,21401.5
+SO,ice,ERA5,sink,Top melt,522.34,,1.96,,,2.44,26586.05,21401.5
+SO,ice,ERA5,sink,Lateral melt,2910.79,,10.95,,,13.6,26586.05,21401.5
+SO,ice,ERA5,sink,Basal melt,23111.43,,86.93,,,107.99,26586.05,21401.5

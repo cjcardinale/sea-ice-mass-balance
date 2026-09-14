@@ -344,6 +344,7 @@ def _plotly_sankey_fig(res_label, res_color, inflows, outflows,
     show_residual: if False, strip the Residual balancing node from the diagram.
     show_percent: if True, add each terminal node's share of its side's total
       (inflows as % of total sources, outflows as % of total sinks) in parentheses.
+      The Residual node is excluded from those totals and gets no %.
     show_group_percent: same, but for the combined Ocean Growth/Ocean Melt group
       node specifically. Defaults to show_percent — pass it explicitly when the
       terminal flow labels already carry their own custom text (e.g. the ±1 SD
@@ -379,15 +380,17 @@ def _plotly_sankey_fig(res_label, res_color, inflows, outflows,
     n_in  = len(inflows)
     n_out = len(outflows)
 
-    total_in  = sum(v for v, *_ in inflows)  or 1.0
-    total_out = sum(v for v, *_ in outflows) or 1.0
+    # % shares exclude the Residual (a closure error, not a physical term), matching
+    # the uncertainty Sankeys, which compute their % labels before balancing.
+    total_in  = sum(v for v, lb, _ in inflows  if lb != "Residual") or 1.0
+    total_out = sum(v for v, lb, _ in outflows if lb != "Residual") or 1.0
 
     def _node_label(lb, v, total=None, want_percent=None):
         want_percent = show_percent if want_percent is None else want_percent
         parts = []
         if show_values:
             parts.append(f"{_fmt(v)} Gt yr⁻¹")
-        if want_percent and total is not None:
+        if want_percent and total is not None and lb != "Residual":
             parts.append(f"{100 * v / total:.0f}%")
         if not parts:
             return lb
@@ -1027,6 +1030,68 @@ def make_snow_sankey_uncertainty_plotly(snow_budget, model=None, res_label="Snow
                              sources_sinks_y=1.03, res_label_y=0.06, n_members=n_members,
                              scale_bar_Gt=scale_bar_Gt, width=width)
     return fig
+
+
+# ── Budget tables (CSV export of the Sankey numbers) ───────────────────────────
+
+def budget_table(inflows, outflows, region, budget_type, model_label, scale_ref=None):
+    """One row per Sankey flow — the numbers behind a single figure — as a DataFrame.
+
+    inflows / outflows: (value_Gt, label, color[, sd_Gt]) tuples, as produced by
+      _ice_flows_uncertainty / _snow_flows_uncertainty (with sd) or built by hand
+      (e.g. era5_sankey.ipynb, no sd). Zero flows are dropped, as in the figures.
+    Columns:
+      flux_Gt_yr / sd_Gt_yr: annual flux and inter-member SD (NaN if not given).
+      pct_of_side_total: share of total sources (or sinks), the % shown on the
+        figure; pct_lo/pct_hi are the ±1 SD range shown by the uncertainty Sankeys.
+      pct_of_scale_ref: flux as % of the shared scale_ref reservoir total, i.e. the
+        ribbon width relative to the reference figure (comparable across figures).
+      reservoir_Gt_yr: this figure's balanced reservoir throughput.
+    A "Residual" row balances the smaller side. Like on the figures, it's excluded
+    from the % totals and gets no pct_of_side_total.
+    """
+    def _norm(t):
+        return t[0], t[1], (t[3] if len(t) > 3 else np.nan)
+    ins  = [_norm(t) for t in inflows  if t[0] > 0]
+    outs = [_norm(t) for t in outflows if t[0] > 0]
+    imbalance = sum(v for v, *_ in ins) - sum(v for v, *_ in outs)
+    residual = (abs(imbalance), "Residual", np.nan)
+    ins_bal  = ins  + ([residual] if imbalance < 0 else [])
+    outs_bal = outs + ([residual] if imbalance > 0 else [])
+    reservoir = sum(v for v, *_ in ins_bal)
+    ref = scale_ref[0] if scale_ref is not None and scale_ref[0] > 0 else np.nan
+
+    rows = []
+    for side, terms, bal in (("source", ins, ins_bal), ("sink", outs, outs_bal)):
+        total = sum(v for v, *_ in terms)
+        for v, lb, sd in bal:
+            pct = 100 * v / total if (total > 0 and lb != "Residual") else np.nan
+            has_range = not (np.isnan(pct) or np.isnan(sd))
+            rows.append({
+                "region": region, "budget": budget_type, "model": model_label, "side": side,
+                "term": lb, "flux_Gt_yr": v, "sd_Gt_yr": sd,
+                "pct_of_side_total": pct,
+                "pct_lo": 100 * max(0.0, v - sd) / total if has_range else np.nan,
+                "pct_hi": 100 * (v + sd) / total if has_range else np.nan,
+                "pct_of_scale_ref": 100 * v / ref,
+                "reservoir_Gt_yr": reservoir, "scale_ref_Gt_yr": ref,
+            })
+    return pd.DataFrame(rows)
+
+def ice_budget_table(ice_budget, model=None, region="", include_dynamics=True, scale_ref=None):
+    """budget_table for one ice Sankey, using the same flows/filters as
+    make_ice_sankey_uncertainty_plotly (include_dynamics: False for SO/AO, True for IA)."""
+    inflows, outflows = _ice_flows_uncertainty(ice_budget, model)
+    if not include_dynamics:
+        inflows  = [t for t in inflows  if t[1] != "Dynamics"]
+        outflows = [t for t in outflows if t[1] != "Dynamics"]
+    return budget_table(inflows, outflows, region, "ice", model or "MME", scale_ref)
+
+def snow_budget_table(snow_budget, model=None, region="", scale_ref=None):
+    """budget_table for one snow Sankey, using the same flows as
+    make_snow_sankey_uncertainty_plotly."""
+    inflows, outflows = _snow_flows_uncertainty(snow_budget, model)
+    return budget_table(inflows, outflows, region, "snow", model or "MME", scale_ref)
 
 
 # ––––– Spatial Masking –––––––––––––––––

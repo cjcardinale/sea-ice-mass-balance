@@ -1,0 +1,22 @@
+region,budget,model,side,term,flux_Gt_yr,sd_Gt_yr,pct_of_side_total,pct_lo,pct_hi,pct_of_scale_ref,reservoir_Gt_yr,scale_ref_Gt_yr
+SO,snow,MME,source,Snowfall,4191.98,1081.96,100.0,74.19,125.81,86.97,4820.13,4820.13
+SO,snow,MME,source,Residual,628.15,,,,,13.03,4820.13,4820.13
+SO,snow,MME,sink,Vapour Exchange,443.13,79.41,9.19,7.55,10.84,9.19,4820.13,4820.13
+SO,snow,MME,sink,Wind drift,485.0,22.08,10.06,9.6,10.52,10.06,4820.13,4820.13
+SO,snow,MME,sink,Snowmelt,1439.03,527.7,29.85,18.91,40.8,29.85,4820.13,4820.13
+SO,snow,MME,sink,Snow-to-ice,2224.31,580.27,46.15,34.11,58.18,46.15,4820.13,4820.13
+SO,snow,MME,sink,Dynamics,228.66,171.94,4.74,1.18,8.31,4.74,4820.13,4820.13
+AO,snow,MME,source,Snowfall,2010.66,208.22,100.0,89.64,110.36,41.71,2195.8,4820.13
+AO,snow,MME,source,Residual,185.14,,,,,3.84,2195.8,4820.13
+AO,snow,MME,sink,Vapour Exchange,236.78,38.0,10.78,9.05,12.51,4.91,2195.8,4820.13
+AO,snow,MME,sink,Wind drift,208.55,6.22,9.5,9.21,9.78,4.33,2195.8,4820.13
+AO,snow,MME,sink,Snowmelt,1214.16,162.37,55.29,47.9,62.69,25.19,2195.8,4820.13
+AO,snow,MME,sink,Snow-to-ice,330.65,84.72,15.06,11.2,18.92,6.86,2195.8,4820.13
+AO,snow,MME,sink,Dynamics,205.66,115.89,9.37,4.09,14.64,4.27,2195.8,4820.13
+IA,snow,MME,source,Snowfall,1220.01,91.45,100.0,92.5,107.5,25.31,1309.97,4820.13
+IA,snow,MME,source,Residual,89.96,,,,,1.87,1309.97,4820.13
+IA,snow,MME,sink,Vapour Exchange,144.71,34.27,11.05,8.43,13.66,3.0,1309.97,4820.13
+IA,snow,MME,sink,Wind drift,110.1,2.97,8.41,8.18,8.63,2.28,1309.97,4820.13
+IA,snow,MME,sink,Snowmelt,796.55,105.91,60.81,52.72,68.89,16.53,1309.97,4820.13
+IA,snow,MME,sink,Snow-to-ice,80.57,47.57,6.15,2.52,9.78,1.67,1309.97,4820.13
+IA,snow,MME,sink,Dynamics,178.04,46.5,13.59,10.04,17.14,3.69,1309.97,4820.13

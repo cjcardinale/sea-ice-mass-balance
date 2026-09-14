@@ -45,8 +45,8 @@ dicts (`ice_budget_*`, `snow_budget_*`, now including an Inner Arctic region: `i
 shared `scale_ref` height scale so figures are visually comparable, and calls `make_ice_sankey_plotly` /
 `make_snow_sankey_plotly` once per model in `SANKEY_MODELS` plus once with `model=None` for the multi-model
 ensemble (MME) mean. `SANKEY_MODELS` is defined in the notebook itself (not `functions.py`) and is
-conditional on an `add_CESM2_LE` toggle — CESM2-LE is off by default since CESM2 + CESM2-WACCM already
-cover that model family and including all three would over-weight it in the MME. Figures are written to
+conditional on an `add_CESM2_LE` toggle — CESM2-LE is on (`True`) in the paper configuration, alongside
+CESM2-WACCM; the CMIP6 CESM2 contribution is excluded. Figures are written to
 `figures/` as `.png`/`.pdf` (optionally `.svg`), named `{ice,snow}_sankey_{AO,SO,IA}_{model}_{year-range}.{ext}`.
 
 **Independent — `era5_sankey.ipynb`**: builds a comparison Sankey from an ERA5-forced NEMO-SI3
@@ -90,12 +90,11 @@ definitions, unit conversions, or corrections, change `load.py`/`functions.py`, 
 
 ## Models
 
-Ten models are used by default (up from the original six): ACCESS-CM2, HadGEM3-GC31-LL, UKESM1-0-LL,
-MRI-ESM2-0, CESM2-WACCM, NorESM2-LM, CNRM-CM6-1, CNRM-ESM2-1, IPSL-CM6A-LR, EC-Earth3. CESM2, NorESM2-MM, and
-CNRM-CM6-1-HR have also been ingested but are excluded from the default set as resolution/model-family
-duplicates of CESM2-WACCM, NorESM2-LM, and CNRM-CM6-1 respectively. CESM2-LE is supported but off by
-default (`add_CESM2_LE=True` in `cmip6_sankey.ipynb` to include it) — with CESM2-WACCM already in
-the default set, adding CESM2-LE too would over-weight that model family in the MME.
+Eleven models are used by default, matching the paper draft: ACCESS-CM2, HadGEM3-GC31-LL, UKESM1-0-LL,
+MRI-ESM2-0, CESM2-WACCM, CESM2-LE, NorESM2-LM, CNRM-CM6-1, CNRM-ESM2-1, IPSL-CM6A-LR, EC-Earth3. CESM2-LE is
+included via `add_CESM2_LE=True` in `cmip6_sankey.ipynb` (note it's SSP3-7.0-forced; all others SSP2-4.5).
+CESM2 (the CMIP6 contribution), NorESM2-MM, and CNRM-CM6-1-HR have also been ingested but are excluded as
+resolution/model-family duplicates of CESM2-WACCM, NorESM2-LM, and CNRM-CM6-1 respectively.
 
 ## Key data-modeling gotchas
 
